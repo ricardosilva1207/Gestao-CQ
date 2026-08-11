@@ -130,7 +130,7 @@ export class NormasPage {
       <!-- Top bar -->
       <div class="normas-topbar">
         <button class="normas-back" id="normas-back-btn">← Voltar ao Dashboard</button>
-        <div class="normas-page-title">📄 Normas Metrologia</div>
+        <div class="normas-page-title">📄 Normas CQ</div>
       </div>
 
       <!-- Conteúdo -->

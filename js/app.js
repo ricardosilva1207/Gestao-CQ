@@ -78,7 +78,7 @@ class App {
 
   async init() {
     try {
-      logger.info('[App] Iniciando Dashboard Metrologia...');
+      logger.info('[App] Iniciando Gerenciamento de Atividade CQ...');
 
       this._cfg = await this._loadConfig();
       this._theme = getTheme() ?? this._cfg?.theme?.default ?? 'dark';
@@ -116,7 +116,7 @@ class App {
 
   _defaultConfig() {
     return {
-      app: { name: 'Metrologia', subtitle: 'Painel de Controle' },
+      app: { name: 'Gerenciamento de Atividade CQ', subtitle: 'Painel de Controle' },
       api: { useMock: true },
       theme: { default: 'dark', allowToggle: true },
       features: { ticker: true, editDrawer: true },
@@ -133,7 +133,7 @@ class App {
         { id: 'hist-periodica',    label: 'Histórico Periódico',     icon: 'history',  badge: 0, page: 'hist-periodica' },
         { id: 'analise-extra',     label: 'Análise Extra',           icon: 'plus',     badge: 0, page: 'analise-extra' },
         { id: 'cronograma',        label: 'Cronograma de Atividade', icon: 'calendar', badge: 0,  page: 'cronograma'    },
-        { id: 'normas',            label: 'Normas Metrologia',       icon: 'file',     badge: 0,  page: 'normas'        },
+        { id: 'normas',            label: 'Normas CQ',               icon: 'file',     badge: 0,  page: 'normas'        },
         { id: 'hinpyou',           label: 'Hinpyou',                 icon: 'bell',     badge: 0,  page: 'hinpyou'       },
         { id: 'desenhos',          label: 'Desenhos',                icon: 'pen',      badge: 0,  page: 'desenhos'      },
         { id: 'configuracoes',     label: 'Configurações',           icon: 'cog',      badge: 0,  action: 'openConfig'  },

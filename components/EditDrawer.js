@@ -441,7 +441,7 @@ export class EditDrawer {
           ? `<img src="${localStorage.getItem('metrologia_logo') || document.getElementById('_toyota_logo')?.src}" style="width:100%;height:100%;object-fit:contain;" alt="Logo">`
           : 'M'}
       </div>
-      <h3>${escapeHtml(this._cfg.app?.name ?? 'Dashboard Metrologia')}</h3>
+      <h3>${escapeHtml(this._cfg.app?.name ?? 'Gerenciamento de Atividade CQ')}</h3>
       <p class="text-muted">${escapeHtml(this._cfg.app?.subtitle ?? 'Dashboard Operacional')}</p>
       <hr class="drawer__hr">
       <div class="drawer__info-row"><span>Versão:</span><strong>2.1.0</strong></div>
@@ -449,7 +449,7 @@ export class EditDrawer {
       <div class="drawer__info-row"><span>Arquitetura:</span><strong>ES6 Modules + Vanilla JS</strong></div>
       <div class="drawer__info-row"><span>Compatível com:</span><strong>SharePoint, OneDrive</strong></div>
       <hr class="drawer__hr">
-      <p class="text-xs text-muted">Dashboard Operacional de Metrologia. Desenvolvido para uso corporativo.</p>
+      <p class="text-xs text-muted">Sistema de Gerenciamento de Atividade CQ. Desenvolvido para uso corporativo.</p>
       <p class="text-xs text-muted" style="margin-top:6px;">Desenvolvido por <strong style="color:var(--text);">Ricardo Gilberto</strong> — <a href="mailto:rgdsilva@toyota.om.br" style="color:var(--accent,#4ea3ff);text-decoration:none;">rgdsilva@toyota.om.br</a></p>
     `;
     body.appendChild(box);

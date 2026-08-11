@@ -591,7 +591,7 @@ if __name__ == '__main__':
         email_status = '[EMAIL ATIVO]' if _load_email_cfg() else '[E-mail desativado - configure data/config-email.json]'
         print()
         print('  +==================================================+')
-        print('  |      Dashboard Metrologia - Servidor             |')
+        print('  |  Gerenciamento de Atividade CQ - Servidor        |')
         print('  +==================================================+')
         print()
         print(f'  Dashboard:   http://localhost:{PORT}/')

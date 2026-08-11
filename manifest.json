@@ -1,7 +1,7 @@
 {
-  "name": "Dashboard Metrologia · PFZ CQ",
-  "short_name": "Metrologia",
-  "description": "Painel de Controle de Metrologia — Análises Periódicas, Extras e Cronograma",
+  "name": "Gerenciamento de Atividade CQ · PFZ CQ",
+  "short_name": "Gerenciamento CQ",
+  "description": "Painel de Controle de Gerenciamento de Atividade CQ — Análises Periódicas, Extras e Cronograma",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

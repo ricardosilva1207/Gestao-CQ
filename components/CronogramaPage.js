@@ -1561,7 +1561,7 @@ body {
 <div class="page-hdr">
   <div class="page-hdr-left">
     <div class="page-title">📅 Cronograma de Atividades</div>
-    <div class="page-sub">Metrologia Industrial — Dashboard</div>
+    <div class="page-sub">Gerenciamento de Atividade CQ — Dashboard</div>
   </div>
   <div class="page-hdr-right">
     <div class="page-badge">${d.mes ?? '—'}</div>
@@ -1613,7 +1613,7 @@ ${legendHtml}
 
 <!-- Rodapé -->
 <div class="page-footer">
-  <span>Dashboard Metrologia Industrial</span>
+  <span>Gerenciamento de Atividade CQ</span>
   <span>${d.mes ?? '—'} — Gerado em ${dataImpressao}</span>
 </div>
 

@@ -97,7 +97,7 @@ export class Sidebar {
 
     const name = document.createElement('div');
     name.className   = 'sidebar__brand-name';
-    name.textContent = app.name ?? 'Metrologia';
+    name.textContent = app.name ?? 'Gerenciamento de Atividade CQ';
 
     const sub = document.createElement('div');
     sub.className   = 'sidebar__brand-sub';

@@ -1785,7 +1785,7 @@ export class AnalisePeriodicaPage {
   ${_logo ? `<img class="logo" src="${_logo}" alt="Toyota">` : ''}
   <div class="hdr-text">
     <h1>Relatório de Análise Periódica — ${d.tipo ?? 'Dimensional'}</h1>
-    <p>Toyota Metrologia · Painel de Controle · Emitido em ${hoje} · ${rast?.titulo ?? ''}</p>
+    <p>Toyota · Gerenciamento de Atividade CQ · Painel de Controle · Emitido em ${hoje} · ${rast?.titulo ?? ''}</p>
   </div>
 </div>
 <div class="info-box">
