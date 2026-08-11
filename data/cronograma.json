@@ -2,6 +2,7 @@
   "mes": "Agosto",
   "ano": 2026,
   "mesNum": 8,
+  "turnosAtivos": [1, 2],
   "diasSemExpediente": [],
   "diasSemana": {
     "1": "sáb",

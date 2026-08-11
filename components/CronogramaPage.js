@@ -9,6 +9,10 @@
  */
 
 import { adminFetch } from '../js/utils.js';
+import { HIERARQUIA } from './AnalisePeriodicaPage.js';
+
+const TURNOS_ATIVOS_KEY = 'metrologia_turnos_ativos';
+const TURNOS_ATIVOS_DEFAULT = [1, 2];
 
 export class CronogramaPage {
   constructor(container, cfg, bus) {
@@ -43,7 +47,7 @@ export class CronogramaPage {
       const r = await fetch('data/cronograma.json', { cache: 'no-store' });
       this._data = await r.json();
     } catch {
-      this._data = { mes: '—', ano: new Date().getFullYear(), mesNum: new Date().getMonth()+1, items: [], diario: [], diasSemana: {} };
+      this._data = { mes: '—', ano: new Date().getFullYear(), mesNum: new Date().getMonth()+1, turnosAtivos: this._getTurnosAtivosDefault(), items: [], diario: [], diasSemana: {} };
     }
   }
 
@@ -360,6 +364,49 @@ export class CronogramaPage {
         font-size: 12px; font-weight: 600; cursor: pointer;
       }
       .crono-edit-add-group:hover { border-color: var(--accent); color: var(--accent); }
+
+      /* Seções do editor (turnos, atividades) */
+      .crono-edit-sec { margin-bottom: 12px; }
+      .crono-edit-sec-lbl {
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .6px; color: var(--text-mute); margin-bottom: 6px;
+      }
+
+      /* Chips de turnos */
+      .crono-turnos-row { display: flex; gap: 6px; flex-wrap: wrap; }
+      .crono-turno-chip {
+        padding: 6px 14px; border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--panel-2); color: var(--text-mute);
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        transition: all .15s;
+      }
+      .crono-turno-chip:hover { border-color: var(--accent); color: var(--text); }
+      .crono-turno-chip.active {
+        background: var(--accent); border-color: var(--accent); color: #fff;
+      }
+
+      /* Grade de chips de atividades */
+      .crono-atv-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 6px;
+      }
+      .crono-atv-chip {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+        padding: 8px 10px; border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--panel-2); color: var(--text);
+        font-size: 11px; text-align: left; cursor: pointer;
+        transition: all .15s;
+      }
+      .crono-atv-chip:hover:not(:disabled) { border-color: var(--accent); background: var(--panel); }
+      .crono-atv-chip strong { font-size: 12px; font-weight: 700; line-height: 1.2; }
+      .crono-atv-chip small  { font-size: 9px; color: var(--text-mute); }
+      .crono-atv-chip.selected, .crono-atv-chip:disabled {
+        opacity: .5; cursor: not-allowed;
+        border-color: var(--ok, #22c55e);
+      }
+      .crono-atv-chip.selected strong::before { content: '✓ '; color: var(--ok, #22c55e); }
 
       /* ── Célula Justificada (azul) ── */
       .crono-cell--just {
@@ -755,12 +802,12 @@ export class CronogramaPage {
     const diasNum = Object.keys(d.diasSemana ?? {}).map(Number).sort((a,b)=>a-b);
     const now     = new Date();
     const isCurrentMonth = (d.mesNum === now.getMonth()+1) && (d.ano === now.getFullYear());
-    const INFO_COLS = 6; // Nº, Dimensional, Freq PFZ, Freq DVR, Tempo, T
+    const INFO_COLS = 6; // Nº, Dimensional, Freq/Turno, Freq/Mês, Tempo, T
 
     // ── Thead ──
     const thead = document.createElement('thead');
     const trH1  = document.createElement('tr');
-    ['Nº','Dimensional','Freq. PFZ','Freq. DVR','Tempo','T'].forEach(lbl => {
+    ['Nº','Dimensional','Freq/Turno','Freq/Mês','Tempo','T'].forEach(lbl => {
       const th = document.createElement('th');
       th.textContent = lbl; th.className = 'crono-th--info'; th.rowSpan = 2;
       if (lbl === 'T') { th.style.width = '20px'; th.style.minWidth = '20px'; th.style.padding = '3px 2px'; }
@@ -803,8 +850,10 @@ export class CronogramaPage {
         tbody.appendChild(trP);
       }
 
-      // Normaliza: usa it.turnos se disponível, fallback para it.dias
-      const turnos = it.turnos ?? [{ turno: 1, dias: it.dias ?? {} }];
+      // Normaliza: usa it.turnos se disponível; senão, deriva dos turnos ativos globais
+      const turnosAtivos = Array.isArray(d.turnosAtivos) && d.turnosAtivos.length
+        ? d.turnosAtivos : [1];
+      const turnos = it.turnos ?? turnosAtivos.map(t => ({ turno: t, dias: it.dias ?? {} }));
       const multi  = turnos.length > 1;
       const tempoFmt = /^\d+$/.test(it.tempo || '') ? `${it.tempo} min` : (it.tempo || '—');
 
@@ -817,8 +866,8 @@ export class CronogramaPage {
           const infoCells = [
             { cls: 'crono-td--item',  txt: it.item },
             { cls: 'crono-td--dim',   txt: it.dimensional },
-            { cls: 'crono-td--freq',  txt: it.freqPFZ },
-            { cls: 'crono-td--freq',  txt: it.freqDVR },
+            { cls: 'crono-td--freq',  txt: it.freqPorTurno ?? '' },
+            { cls: 'crono-td--freq',  txt: it.freqMes ?? '' },
             { cls: 'crono-td--tempo', txt: tempoFmt },
           ];
           infoCells.forEach(c => {
@@ -1240,6 +1289,9 @@ export class CronogramaPage {
   _openEditModal() {
     // Clone profundo dos dados para edição
     this._editData = JSON.parse(JSON.stringify(this._data));
+    if (!Array.isArray(this._editData.turnosAtivos)) {
+      this._editData.turnosAtivos = this._getTurnosAtivosDefault();
+    }
 
     const overlay = document.createElement('div');
     overlay.className = 'crono-edit-overlay';
@@ -1346,8 +1398,8 @@ export class CronogramaPage {
     const thInfos = [
       `<th rowspan="2" style="width:2.5%;min-width:20px;">Nº</th>`,
       `<th rowspan="2" style="width:14%;text-align:left;padding-left:5px;">Dimensional</th>`,
-      `<th rowspan="2" style="width:5%;">Freq. PFZ</th>`,
-      `<th rowspan="2" style="width:5%;">Freq. DVR</th>`,
+      `<th rowspan="2" style="width:5%;">Freq/Turno</th>`,
+      `<th rowspan="2" style="width:5%;">Freq/Mês</th>`,
       `<th rowspan="2" style="width:4.5%;">Tempo</th>`,
       `<th rowspan="2" style="width:1.8%;">T</th>`,
     ].join('');
@@ -1383,8 +1435,8 @@ export class CronogramaPage {
           const rs = multi ? ` rowspan="${turnos.length}"` : '';
           ganttRows += `<td${rs} class="td-item">${it.item}</td>`;
           ganttRows += `<td${rs} class="td-dim">${it.dimensional}</td>`;
-          ganttRows += `<td${rs} class="td-freq">${it.freqPFZ??'—'}</td>`;
-          ganttRows += `<td${rs} class="td-freq">${it.freqDVR??'—'}</td>`;
+          ganttRows += `<td${rs} class="td-freq">${it.freqPorTurno??'—'}</td>`;
+          ganttRows += `<td${rs} class="td-freq">${it.freqMes??'—'}</td>`;
           ganttRows += `<td${rs} class="td-tempo">${tempoFmt}</td>`;
         }
 
@@ -1758,7 +1810,7 @@ ${legendHtml}
     box.className = 'crono-confirm-box';
 
     const atividadesList = (d.items ?? [])
-      .map(it => `<li><strong>${it.peca}</strong> — ${it.dimensional} (${it.freqDVR || it.freqPFZ})</li>`)
+      .map(it => `<li><strong>${it.peca}</strong> — ${it.dimensional} (${it.freqMes ?? it.freqPorTurno ?? '—'})</li>`)
       .join('');
 
     box.innerHTML = `
@@ -1808,6 +1860,9 @@ ${legendHtml}
       mes: novoMesLabel,
       ano: novoAno,
       mesNum: novoMes,
+      turnosAtivos: Array.isArray(this._data.turnosAtivos) && this._data.turnosAtivos.length
+        ? [...this._data.turnosAtivos]
+        : this._getTurnosAtivosDefault(),
       diasSemExpediente: [],
       diasSemana: novosDiasSemana,
       items: novosItens,
@@ -1915,16 +1970,92 @@ ${legendHtml}
     body.innerHTML = '';
     const d = this._editData;
 
-    // Botão adicionar grupo/peça
+    // Garante turnosAtivos (herda do salvo global ou do padrão)
+    if (!Array.isArray(d.turnosAtivos)) {
+      d.turnosAtivos = this._getTurnosAtivosDefault();
+    }
+
+    /* ── Seção: Turnos rodando (global) ─────────────────────── */
+    const secTurnos = document.createElement('div');
+    secTurnos.className = 'crono-edit-sec';
+    const turnosLbl = document.createElement('div');
+    turnosLbl.className = 'crono-edit-sec-lbl';
+    turnosLbl.textContent = 'Turnos rodando';
+    secTurnos.appendChild(turnosLbl);
+    const turnosRow = document.createElement('div');
+    turnosRow.className = 'crono-turnos-row';
+    [1, 2, 3].forEach(t => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const active = d.turnosAtivos.includes(t);
+      btn.className = 'crono-turno-chip' + (active ? ' active' : '');
+      btn.textContent = `${t}º Turno`;
+      btn.addEventListener('click', () => {
+        const idx = d.turnosAtivos.indexOf(t);
+        if (idx >= 0) d.turnosAtivos.splice(idx, 1);
+        else { d.turnosAtivos.push(t); d.turnosAtivos.sort(); }
+        this._saveTurnosAtivosDefault(d.turnosAtivos);
+        this._rebuildEditBody(body);
+      });
+      turnosRow.appendChild(btn);
+    });
+    secTurnos.appendChild(turnosRow);
+    body.appendChild(secTurnos);
+
+    /* ── Seção: Atividades disponíveis (chips) ───────────────── */
+    const secDisp = document.createElement('div');
+    secDisp.className = 'crono-edit-sec';
+    const dispLbl = document.createElement('div');
+    dispLbl.className = 'crono-edit-sec-lbl';
+    dispLbl.textContent = 'Atividades disponíveis (clique para adicionar)';
+    secDisp.appendChild(dispLbl);
+    const dispGrid = document.createElement('div');
+    dispGrid.className = 'crono-atv-grid';
+    const jaAdicionadas = new Set(d.items.map(i => `${i.peca}||${i.dimensional}`));
+    this._getAtividadesDisponiveis().forEach(({ contexto, atividade }) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      const usado = jaAdicionadas.has(`${contexto}||${atividade}`);
+      chip.className = 'crono-atv-chip' + (usado ? ' selected' : '');
+      chip.disabled = usado;
+      chip.innerHTML = `<strong>${atividade}</strong><small>${contexto}</small>`;
+      chip.addEventListener('click', () => {
+        if (usado) return;
+        const nextNum = (d.items.length ? Math.max(...d.items.map(i=>i.item)) : 0) + 1;
+        const freqMes = 4;
+        const dias = this._gerarDiasParaFreq(freqMes, d.diasSemana, d.diasSemExpediente ?? []);
+        d.items.push({
+          item: nextNum,
+          peca: contexto,
+          dimensional: atividade,
+          freqPorTurno: 1,
+          freqMes,
+          tempo: '',
+          dias,
+        });
+        this._rebuildEditBody(body);
+      });
+      dispGrid.appendChild(chip);
+    });
+    secDisp.appendChild(dispGrid);
+    body.appendChild(secDisp);
+
+    /* ── Seção: Selecionadas ───────────────────────────────── */
+    const secLbl = document.createElement('div');
+    secLbl.className = 'crono-edit-sec-lbl';
+    secLbl.style.cssText = 'margin-top:10px;';
+    secLbl.textContent = 'Selecionadas';
+    body.appendChild(secLbl);
+
+    // Botão adicionar grupo/peça (avulso)
     const addGroupBtn = document.createElement('button');
     addGroupBtn.className = 'crono-edit-add-group';
-    addGroupBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar Peça / Grupo`;
+    addGroupBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar Peça / Grupo (avulso)`;
     addGroupBtn.addEventListener('click', () => {
       const nome = prompt('Nome da nova Peça/Grupo:', '');
       if (!nome?.trim()) return;
-      // Adiciona item placeholder para criar o grupo
       const nextNum = (d.items.length ? Math.max(...d.items.map(i=>i.item)) : 0) + 1;
-      d.items.push({ item: nextNum, peca: nome.trim(), dimensional: '', freqPFZ: '', freqDVR: '', tempo: '', dias: {} });
+      d.items.push({ item: nextNum, peca: nome.trim(), dimensional: '', freqPorTurno: '', freqMes: '', tempo: '', dias: {} });
       this._rebuildEditBody(body);
     });
     body.appendChild(addGroupBtn);
@@ -1979,10 +2110,10 @@ ${legendHtml}
         fields.className = 'crono-edit-item__fields';
 
         const fieldDefs = [
-          { key: 'dimensional', label: 'Dimensional', full: true },
-          { key: 'freqPFZ',     label: 'Freq. PFZ' },
-          { key: 'freqDVR',     label: 'Freq. DVR' },
-          { key: 'tempo',       label: 'Tempo' },
+          { key: 'dimensional',   label: 'Atividade / Dimensional', full: true },
+          { key: 'freqPorTurno',  label: 'Freq/Turno', type: 'number' },
+          { key: 'freqMes',       label: 'Freq/Mês',   type: 'number', recomputeDias: true },
+          { key: 'tempo',         label: 'Tempo',      full: true },
         ];
         fieldDefs.forEach(fd => {
           const fWrap = document.createElement('div');
@@ -1990,9 +2121,19 @@ ${legendHtml}
           const lbl = document.createElement('label');
           lbl.textContent = fd.label;
           const inp = document.createElement('input');
+          if (fd.type === 'number') { inp.type = 'number'; inp.min = '0'; inp.step = '1'; }
           inp.value = it[fd.key] ?? '';
           inp.placeholder = fd.label;
-          inp.addEventListener('input', () => { it[fd.key] = inp.value; });
+          inp.addEventListener('input', () => {
+            const raw = inp.value;
+            it[fd.key] = fd.type === 'number' ? (raw === '' ? '' : Number(raw)) : raw;
+            if (fd.recomputeDias) {
+              const n = Number(raw);
+              it.dias = Number.isFinite(n) && n > 0
+                ? this._gerarDiasParaFreq(n, d.diasSemana, d.diasSemExpediente ?? [])
+                : {};
+            }
+          });
           fWrap.appendChild(lbl); fWrap.appendChild(inp);
           fields.appendChild(fWrap);
         });
@@ -2016,11 +2157,59 @@ ${legendHtml}
       addItemBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar item em "${peca}"`;
       addItemBtn.addEventListener('click', () => {
         const nextNum = (d.items.length ? Math.max(...d.items.map(i=>i.item)) : 0) + 1;
-        d.items.push({ item: nextNum, peca, dimensional: '', freqPFZ: '', freqDVR: '', tempo: '', dias: {} });
+        d.items.push({ item: nextNum, peca, dimensional: '', freqPorTurno: '', freqMes: '', tempo: '', dias: {} });
         this._rebuildEditBody(body);
       });
       grp.appendChild(addItemBtn);
       body.appendChild(grp);
     });
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     HELPERS — Turnos Ativos + Atividades + Distribuição
+  ══════════════════════════════════════════════════════════ */
+  _getTurnosAtivosDefault() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(TURNOS_ATIVOS_KEY) ?? 'null');
+      if (Array.isArray(raw)) {
+        const filtrado = raw.filter(n => [1, 2, 3].includes(Number(n))).map(Number);
+        if (filtrado.length) return filtrado.sort();
+      }
+    } catch {}
+    return [...TURNOS_ATIVOS_DEFAULT];
+  }
+
+  _saveTurnosAtivosDefault(arr) {
+    try { localStorage.setItem(TURNOS_ATIVOS_KEY, JSON.stringify(arr)); } catch {}
+  }
+
+  _getAtividadesDisponiveis() {
+    const out = [];
+    const seen = new Set();
+    Object.entries(HIERARQUIA?.medicoes ?? {}).forEach(([key, atividades]) => {
+      const contexto = key.replace(/\|/g, ' · ');
+      (atividades ?? []).forEach(a => {
+        const combo = `${contexto}||${a}`;
+        if (seen.has(combo)) return;
+        seen.add(combo);
+        out.push({ contexto, atividade: a });
+      });
+    });
+    return out;
+  }
+
+  _gerarDiasParaFreq(freqMes, diasSemana, semExpediente = []) {
+    const n = Number(freqMes);
+    if (!Number.isFinite(n) || n <= 0) return {};
+    const semExpSet = new Set((semExpediente ?? []).map(Number));
+    const workDayNomes = new Set(['seg', 'ter', 'qua', 'qui', 'sex']);
+    const diasUteis = Object.entries(diasSemana ?? {})
+      .filter(([day, nome]) => workDayNomes.has(nome) && !semExpSet.has(Number(day)))
+      .map(([day]) => Number(day))
+      .sort((a, b) => a - b);
+    const escolhidos = this._pickEvenly(diasUteis, Math.min(n, diasUteis.length));
+    const dias = {};
+    escolhidos.forEach(d => { dias[String(d)] = 4; });
+    return dias;
   }
 }
