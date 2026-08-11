@@ -130,7 +130,6 @@ class App {
       ],
       navItems: [
         { id: 'analise-periodica', label: 'Análise Periódica',       icon: 'chart',    badge: 0, page: 'analise-periodica' },
-        { id: 'hist-periodica',    label: 'Histórico Periódico',     icon: 'history',  badge: 0, page: 'hist-periodica' },
         { id: 'analise-extra',     label: 'Análise Extra',           icon: 'plus',     badge: 0, page: 'analise-extra' },
         { id: 'cronograma',        label: 'Cronograma de Atividade', icon: 'calendar', badge: 0,  page: 'cronograma'    },
         { id: 'normas',            label: 'Normas CQ',               icon: 'file',     badge: 0,  page: 'normas'        },

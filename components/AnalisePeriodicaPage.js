@@ -613,9 +613,15 @@ export class AnalisePeriodicaPage {
     this._topBadge = document.createElement('div');
     this._topBadge.className = 'ap-page__badge';
 
+    const histBtn = document.createElement('button');
+    histBtn.className = 'ap-page__back';
+    histBtn.innerHTML = '📋 Histórico Periódico';
+    histBtn.addEventListener('click', () => this._bus?.emit('nav:change', { page: 'hist-periodica' }));
+
     topbar.appendChild(backBtn);
     topbar.appendChild(titleEl);
     topbar.appendChild(this._topBadge);
+    topbar.appendChild(histBtn);
     this._page.appendChild(topbar);
 
     /* Barra de progresso */
