@@ -177,7 +177,6 @@ export class EditDrawer {
   _buildTabBar() {
     const tabs = [
       { id: 'appearance', label: '🎨 Aparência' },
-      { id: 'data',       label: '📊 Dados'     },
       { id: 'filters',    label: '🔍 Filtros'   },
       { id: 'about',      label: 'ℹ️ Sobre'      },
     ];
@@ -217,7 +216,6 @@ export class EditDrawer {
 
     switch (tabId) {
       case 'appearance': this._renderAppearanceTab(); break;
-      case 'data':       this._renderDataTab();       break;
       case 'filters':    this._renderFiltersTab();    break;
       case 'about':      this._renderAboutTab();      break;
     }
@@ -348,56 +346,6 @@ export class EditDrawer {
       ], String(this._prefs.refreshInterval ?? 600));
       sel.addEventListener('change', e => this._bus.emit('prefs:change', { refreshInterval: Number(e.target.value) }));
       body.appendChild(sel);
-    });
-  }
-
-  /* ---- ABA DADOS ---- */
-  _renderDataTab() {
-    const body = this._bodyEl;
-
-    const { api = {} } = this._cfg;
-
-    // Fonte de dados
-    this._section(body, 'Fonte de Dados', () => {
-      const sel = this._select([
-        { value: 'mock',     label: 'Mock (Demonstração)' },
-        { value: 'rest',     label: 'API REST' },
-        { value: 'onedrive', label: 'OneDrive / SharePoint' },
-        { value: 'excel',    label: 'Arquivo Excel (upload)' },
-      ], this._prefs.dataSource ?? (api.useMock ? 'mock' : 'rest'));
-      sel.addEventListener('change', e => this._bus.emit('prefs:change', { dataSource: e.target.value }));
-      body.appendChild(sel);
-    });
-
-    // Botões de ação
-    this._section(body, 'Ações', () => {
-      const row = this._row('gap');
-
-      const refreshBtn = this._actionBtn('🔄 Atualizar Agora', 'btn--secondary');
-      refreshBtn.addEventListener('click', () => this._bus.emit('data:refresh'));
-
-      const importBtn = this._actionBtn('📂 Importar Excel', 'btn--secondary');
-      importBtn.addEventListener('click', () => this._bus.emit('excel:import'));
-
-      const exportBtn = this._actionBtn('⬇ Exportar Dados', 'btn--secondary');
-      exportBtn.addEventListener('click', () => this._bus.emit('excel:export'));
-
-      row.appendChild(refreshBtn);
-      row.appendChild(importBtn);
-      row.appendChild(exportBtn);
-      body.appendChild(row);
-    });
-
-    // Info de sincronização
-    this._section(body, 'Status de Sincronização', () => {
-      const info = document.createElement('div');
-      info.className = 'drawer__info-box';
-      info.innerHTML = `
-        <div class="drawer__info-row"><span>Fonte:</span><strong>${api.useMock ? 'Mock Data' : api.baseUrl ?? 'N/A'}</strong></div>
-        <div class="drawer__info-row"><span>Status:</span><strong class="text-ok">Conectado</strong></div>
-        <div class="drawer__info-row"><span>Cache TTL:</span><strong>${api.cacheTTL ?? 300}s</strong></div>
-      `;
-      body.appendChild(info);
     });
   }
 
