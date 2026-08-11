@@ -36,6 +36,12 @@ if not exist "%~dp0servidor.py" (
 echo Usando Python: %PY%
 echo Pasta:         %~dp0
 echo.
+echo O navegador sera aberto automaticamente em: http://localhost:8080/
+echo (Deixe esta janela aberta enquanto usar o sistema)
+echo.
+
+REM ---- Abre o navegador apos 2s (em paralelo com o servidor) ----
+start "" /min cmd /c "timeout /t 2 /nobreak >nul && start "" http://localhost:8080/"
 
 REM ---- Executa o servidor ----
 %PY% "%~dp0servidor.py"
