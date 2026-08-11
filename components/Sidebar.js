@@ -95,15 +95,10 @@ export class Sidebar {
     const text = document.createElement('div');
     text.className = 'sidebar__brand-text';
 
-    const name = document.createElement('div');
-    name.className   = 'sidebar__brand-name';
-    name.textContent = app.name ?? 'Gerenciamento de Atividade CQ';
-
     const sub = document.createElement('div');
     sub.className   = 'sidebar__brand-sub';
     sub.textContent = app.subtitle ?? 'Painel de Controle';
 
-    text.appendChild(name);
     text.appendChild(sub);
     brand.appendChild(logo);
     brand.appendChild(text);

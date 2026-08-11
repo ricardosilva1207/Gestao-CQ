@@ -29,7 +29,7 @@ export class Header {
 
     const title = document.createElement('h1');
     title.className   = 'header__title';
-    title.textContent = 'DASHBOARD METROLOGIA';
+    title.textContent = 'GERENCIAMENTO DE ATIVIDADES CQ';
     left.appendChild(title);
 
     // Lado direito — botões
