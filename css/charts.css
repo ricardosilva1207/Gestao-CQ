@@ -1,0 +1,399 @@
+/* ==========================================================================
+   CHARTS.CSS — Containers e Estilos dos Gráficos
+   Dashboard Operacional Metrologia v2.0
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. GRÁFICO DE COLUNAS (Column Chart)
+   -------------------------------------------------------------------------- */
+.colchart {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 240px;
+  gap: 6px;
+  position: relative;
+}
+
+/* Grid de referência horizontal */
+.colchart__grid {
+  position: absolute;
+  inset: 0 0 28px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.colchart__grid-line {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
+}
+
+/* Eixo Y */
+.colchart__y-labels {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-mute);
+  width: 30px;
+  text-align: right;
+  pointer-events: none;
+}
+
+/* Barras */
+.colchart__bars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: end;
+  gap: 8px;
+  padding-top: 18px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.colchart__col {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  cursor: pointer;
+}
+.colchart__col:hover .colchart__bar { filter: brightness(1.25); }
+
+.colchart__bar {
+  width: 14px;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+  transition: height 0.6s cubic-bezier(.4,.8,.3,1),
+              filter 0.15s ease;
+  cursor: pointer;
+}
+.colchart__bar--falha { background: var(--danger); }
+.colchart__bar--plan  { background: var(--accent); }
+.colchart__bar--ok    { background: var(--ok); }
+.colchart__bar--warn  { background: var(--warn); }
+
+/* Tooltip de valor sobre a barra */
+.colchart__bar-val {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.colchart__bar-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.colchart__col:hover .colchart__bar-tooltip { opacity: 1; }
+
+/* Labels do eixo X */
+.colchart__labels {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   2. DONUT CHART
+   -------------------------------------------------------------------------- */
+.donutwrap {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 12px;
+  align-items: center;
+  height: 240px;
+}
+
+.donut {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.donut svg { width: 100%; height: 100%; max-height: 220px; }
+
+/* Label central do donut */
+.donut__center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.donut__center-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.donut__center-label {
+  font-size: 10px;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+/* Segmento highlight */
+.donut__segment {
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+.donut__segment:hover { opacity: 0.85; }
+
+/* Legenda */
+.donut__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+.donut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.donut__legend-item:hover { opacity: 0.8; }
+.donut__legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.donut__legend-label { flex: 1; min-width: 0; font-size: 11px; }
+.donut__legend-val {
+  font-weight: 700;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Label sobre segmento SVG */
+.donut__label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(0,0,0,0.5);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+[data-theme="light"] .donut__label { background: rgba(255,255,255,0.85); }
+
+/* --------------------------------------------------------------------------
+   3. BARRAS HORIZONTAIS (H-Bars)
+   -------------------------------------------------------------------------- */
+.hbars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.hbar {
+  display: grid;
+  grid-template-columns: 110px 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+.hbar:hover .hbar__fill { filter: brightness(1.2); }
+
+.hbar__name {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+.hbar__track {
+  height: 14px;
+  background: var(--panel-2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.hbar__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(.4,.8,.3,1),
+              filter 0.15s;
+}
+.hbar__fill--danger { background: var(--danger); }
+.hbar__fill--ok     { background: var(--ok); }
+.hbar__fill--warn   { background: var(--warn); }
+.hbar__fill--accent { background: var(--accent); }
+.hbar__fill--info   { background: var(--info); }
+
+.hbar__val {
+  font-weight: 700;
+  color: var(--text);
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.hbar__meta {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   4. GAUGE CHART
+   -------------------------------------------------------------------------- */
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  position: relative;
+}
+.gauge svg { width: 160px; height: 80px; }
+.gauge__val {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gauge__label {
+  font-size: 10px;
+  color: var(--text-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   5. CHART.JS CONTAINER
+   -------------------------------------------------------------------------- */
+.chartjs-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+}
+.chartjs-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Chart toolbar */
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-toolbar__btn {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+.chart-toolbar__btn:hover { background: var(--panel-2); color: var(--text); }
+.chart-toolbar__btn.active {
+  background: rgba(78,163,255,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   6. SPARKLINE (mini gráfico inline)
+   -------------------------------------------------------------------------- */
+.sparkline {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 24px;
+}
+.sparkline__bar {
+  width: 4px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.7;
+  transition: height 0.4s ease;
+}
+
+/* --------------------------------------------------------------------------
+   7. TREEMAP / HEATMAP (placeholder estrutural)
+   -------------------------------------------------------------------------- */
+.heatmap-wrap {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+}
+.heatmap-cell {
+  border-radius: 2px;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+.heatmap-cell:hover { opacity: 0.8; }
+
+/* --------------------------------------------------------------------------
+   8. CHART PLACEHOLDER (loading/vazio)
+   -------------------------------------------------------------------------- */
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-mute);
+  font-size: 12px;
+  gap: 8px;
+}
+.chart-placeholder--loading { animation: pulse 1.5s ease infinite; }

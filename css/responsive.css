@@ -1,0 +1,265 @@
+/* ==========================================================================
+   RESPONSIVE.CSS — Breakpoints, Mobile, Tablet, TV, Ultrawide
+   Dashboard Operacional Metrologia v2.0
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   ULTRAWIDE (> 1800px) — TVs industriais, monitores grandes
+   -------------------------------------------------------------------------- */
+@media (min-width: 1800px) {
+  :root {
+    --sidebar-w: 260px;
+    --header-h: 82px;
+    --ticker-h: 62px;
+  }
+
+  .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .kpi__value { font-size: 36px; }
+  .kpi__label { font-size: 12px; }
+
+  .colchart { height: 300px; }
+  .donutwrap { height: 300px; }
+  .hbars { max-height: 320px; }
+
+  .ticker__time { font-size: 22px; }
+  .ticker__item { font-size: 20px; }
+
+  .panel__title { font-size: 16px; }
+  .filters { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+}
+
+/* --------------------------------------------------------------------------
+   LARGE DESKTOP (1400–1800px) — Standard corporate monitors
+   -------------------------------------------------------------------------- */
+@media (max-width: 1800px) and (min-width: 1400px) {
+  .colchart__bar { width: 12px; }
+  .kpi__value { font-size: 32px; }
+}
+
+/* --------------------------------------------------------------------------
+   MEDIUM DESKTOP (1280–1400px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1400px) {
+  .colchart__bar { width: 10px; }
+  .kpi__value { font-size: 30px; }
+}
+
+/* --------------------------------------------------------------------------
+   SMALL DESKTOP (1100–1280px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1280px) {
+  :root { --sidebar-w: 220px; }
+
+  .filters {
+    grid-template-columns: repeat(10, minmax(130px, 1fr));
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 16px;
+  }
+  .filters::-webkit-scrollbar { height: 4px; }
+  .filters::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .colchart__bar { width: 8px; }
+  .kpi__value { font-size: 28px; }
+  .donutwrap { grid-template-columns: 1fr 120px; }
+  .hbar { grid-template-columns: 90px 1fr 40px; }
+}
+
+/* --------------------------------------------------------------------------
+   TABLET LANDSCAPE (900–1100px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  :root { --sidebar-w: 200px; }
+
+  .row--main   { grid-template-columns: 1fr 1fr; }
+  .row--thirds { grid-template-columns: 1fr 1fr; }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpi__value { font-size: 26px; }
+}
+
+/* --------------------------------------------------------------------------
+   TABLET (600–900px) — iPads, tablets industriais
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  :root {
+    --sidebar-w: 64px;
+    --header-h: 64px;
+    --ticker-h: 48px;
+    --filters-h: auto;
+  }
+
+  /* Sidebar compacta */
+  .sidebar__brand-text { display: none; }
+  .sidebar__brand { justify-content: center; padding: 12px; }
+  .sidebar__brand-name,
+  .sidebar__brand-sub { display: none; }
+  .navbtn__label,
+  .navbtn__count,
+  .sidebar__section-label { display: none; }
+  .navbtn { justify-content: center; padding: 10px; }
+  .sidebar__foot-btn span { display: none; }
+  .sidebar__sync { display: none; }
+
+  /* Layout */
+  .row--main,
+  .row--thirds { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi__value { font-size: 28px; }
+
+  /* Header */
+  .header__crumb { display: none; }
+  .header__title { font-size: 16px; }
+  .header__btn:not(.header__btn--primary):not(.header__btn--fullscreen) { display: none; }
+
+  /* Filters */
+  .filters {
+    grid-template-columns: repeat(5, minmax(130px, 1fr));
+    gap: 8px;
+    padding: 10px 16px;
+    overflow-x: auto;
+  }
+
+  /* Ticker */
+  .ticker__time { font-size: 14px; }
+  .ticker__item { font-size: 14px; }
+
+  /* Donut */
+  .donutwrap { grid-template-columns: 1fr 100px; height: 200px; }
+
+  /* Charts */
+  .colchart { height: 200px; }
+  .hbars { max-height: 200px; }
+  .hbar { grid-template-columns: 80px 1fr 36px; }
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE (< 600px) — Celulares
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+  :root {
+    --sidebar-w: 0px;
+    --header-h: 56px;
+    --ticker-h: 44px;
+  }
+
+  /* Hide sidebar, use bottom nav or hamburger */
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+
+  /* Header mobile */
+  .header { padding: 0 14px; }
+  .header__title { font-size: 14px; }
+  .header__status { display: none; }
+
+  /* Filters: scroll horizontal */
+  .filters {
+    grid-template-columns: repeat(10, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 8px 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* KPIs: 2 cols */
+  .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi { padding: 10px 12px; min-height: 80px; }
+  .kpi__value { font-size: 24px; }
+  .kpi__label { font-size: 10px; }
+
+  /* Rows: 1 col */
+  .row--main,
+  .row--thirds,
+  .row--halves,
+  .row--quarters { grid-template-columns: 1fr; }
+
+  /* Dash padding */
+  .dash { padding: 10px 14px 20px; gap: 10px; }
+
+  /* Donut */
+  .donutwrap { grid-template-columns: 1fr; height: auto; }
+  .donut { height: 200px; }
+  .donut__legend { flex-direction: row; flex-wrap: wrap; }
+
+  /* Ticker */
+  .ticker { padding: 0 10px; }
+  .ticker__time { font-size: 13px; }
+  .ticker__item { font-size: 13px; }
+  .ticker__label { font-size: 9px; padding: 4px 8px; }
+
+  /* Panel */
+  .panel { padding: 10px 12px 10px; }
+  .panel__title { font-size: 12px; }
+
+  /* H-bars */
+  .hbar { grid-template-columns: 70px 1fr 34px; }
+
+  /* Drawer mobile */
+  .drawer { width: 100%; }
+
+  /* Colchart */
+  .colchart { height: 160px; }
+  .colchart__bar { width: 6px; }
+  .colchart__labels { font-size: 9px; }
+}
+
+/* --------------------------------------------------------------------------
+   TV MODE — classe aplicável via JS para modos de exibição em TV
+   -------------------------------------------------------------------------- */
+.tv-mode {
+  --sidebar-w: 0px;
+  --header-h: 80px;
+  --ticker-h: 72px;
+  cursor: none;
+}
+.tv-mode .sidebar { display: none; }
+.tv-mode .main { margin-left: 0; }
+.tv-mode .header__right .header__btn { display: none; }
+.tv-mode .filters { display: none; }
+.tv-mode .kpi__value { font-size: 52px; }
+.tv-mode .kpi__label { font-size: 16px; }
+.tv-mode .ticker__item { font-size: 26px; }
+.tv-mode .ticker__time { font-size: 28px; }
+.tv-mode .panel__title { font-size: 20px; }
+.tv-mode .panel { padding: 20px 24px; }
+.tv-mode .colchart { height: 360px; }
+.tv-mode .donutwrap { height: 360px; }
+.tv-mode .hbars { max-height: 400px; }
+.tv-mode .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+/* --------------------------------------------------------------------------
+   HIGH DPI / RETINA
+   -------------------------------------------------------------------------- */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .kpi::before { width: 3px; }
+}
+
+/* --------------------------------------------------------------------------
+   LANDSCAPE PHONE
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) and (orientation: landscape) {
+  :root { --header-h: 52px; --ticker-h: 40px; }
+  .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .kpi { min-height: 72px; }
+  .kpi__value { font-size: 20px; }
+  .colchart { height: 140px; }
+  .donutwrap { height: 160px; }
+}
+
+/* --------------------------------------------------------------------------
+   DARK OS / LIGHT OS preference
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: light) {
+  /* Honra o prefers-color-scheme apenas se não houver data-theme manual */
+  :root:not([data-theme="dark"]) {
+    --bg:           #eef2f8;
+    --bg-2:         #e3e9f3;
+    --panel:        #ffffff;
+    --panel-2:      #f5f7fb;
+    --border:       #d8dfeb;
+    --border-strong:#c2cbdb;
+    --text:         #1a2236;
+    --text-dim:     #4a566f;
+    --text-mute:    #7a8499;
+    --shadow:       0 4px 18px rgba(20,30,60,0.08);
+  }
+}

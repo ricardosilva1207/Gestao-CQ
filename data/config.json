@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "Metrologia",
+    "subtitle": "Painel de Controle"
+  },
+  "refresh": {
+    "enabled": true,
+    "intervalMs": 300000,
+    "auto": true
+  },
+  "api": {
+    "baseUrl": "",
+    "timeout": 15000,
+    "retries": 3,
+    "useMock": true,
+    "cacheTTL": 300
+  },
+  "theme": {
+    "default": "dark",
+    "allowToggle": true
+  },
+  "features": {
+    "ticker": true,
+    "editDrawer": true,
+    "excelImport": false,
+    "notifications": false
+  },
+  "kpis": [
+    { "id": "qtdPecasMedidas",  "label": "Qtd Peças Medidas", "format": "number",  "colorClass": "accent" },
+    { "id": "qtdNaoConformes",  "label": "Qtd Não Conformes", "format": "number",  "colorClass": "danger" },
+    { "id": "cronPlanejadas",   "label": "Planejadas no Mês",  "format": "number",  "colorClass": "amber"  },
+    { "id": "cronRealiz",       "label": "Realizados",         "format": "number",  "colorClass": "ok"     },
+    { "id": "cronNaoRealiz",    "label": "Não Realizados",     "format": "number",  "colorClass": "danger" },
+    { "id": "cronCumprimento",  "label": "Cumprimento",        "format": "percent", "colorClass": "info"   }
+  ],
+  "navItems": [
+    { "id": "analise-periodica", "label": "Análise Periódica",       "icon": "chart",    "badge": 0, "page": "analise-periodica" },
+    { "id": "hist-periodica",    "label": "Histórico Periódico",     "icon": "history",  "badge": 0, "page": "hist-periodica"         },
+    { "id": "analise-extra",     "label": "Análise Extra",           "icon": "plus",     "badge": 0, "page": "analise-extra"          },
+    { "id": "cronograma",        "label": "Cronograma de Atividade", "icon": "calendar", "badge": 0, "page": "cronograma"              },
+    { "id": "normas",            "label": "Normas Metrologia",       "icon": "file",     "badge": 0, "page": "normas"                  },
+    { "id": "hinpyou",           "label": "Hinpyou",                 "icon": "bell",     "badge": 0, "page": "hinpyou"                 },
+    { "id": "desenhos",          "label": "Desenhos",                "icon": "pen",      "badge": 0, "page": "desenhos"                },
+    { "id": "configuracoes",     "label": "Configurações",           "icon": "cog",      "badge": 0, "action": "openConfig"            }
+  ],
+  "projetos": ["NEXTB", "M20A", "SHAFT", "ALPHA", "BETA5"]
+}

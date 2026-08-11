@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Node / test tooling
+node_modules/
+package.json
+package-lock.json
+
+# Runtime data gerada pelo servidor (nao versionar)
+data/.admin_token
+data/config-email.json
+data/solicitacoes.json
+data/solicitacoes_hist.json
+data/periodica_hist.json
+
+# OS
+.DS_Store
+Thumbs.db

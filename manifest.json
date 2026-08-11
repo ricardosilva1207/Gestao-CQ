@@ -1,0 +1,33 @@
+{
+  "name": "Dashboard Metrologia · PFZ CQ",
+  "short_name": "Metrologia",
+  "description": "Painel de Controle de Metrologia — Análises Periódicas, Extras e Cronograma",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#1a3a6b",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "toyota-logo.png.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "toyota-logo.png.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Solicitar Análise Extra",
+      "short_name": "Análise Extra",
+      "url": "./solicitar-analise.html"
+    }
+  ]
+}

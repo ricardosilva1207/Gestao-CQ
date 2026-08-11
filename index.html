@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Metrologia · Painel de Controle</title>
+  <link rel="icon" href="toyota-logo.png.png">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a3a6b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Metrologia">
+  <link rel="apple-touch-icon" href="toyota-logo.png.png">
+
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/charts.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .sidebar__logo--custom { background: #fff !important; padding: 3px !important; font-size: 0 !important; color: transparent !important; }
+    .sidebar__logo--custom img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading" class="loading-overlay" role="status">
+  <div class="loading-overlay__inner">
+    <div class="loading-overlay__logo"><img src="toyota-logo.png.png" style="width:56px;height:auto;" alt="Toyota"></div>
+    <div class="loading-overlay__spinner"></div>
+    <p class="loading-overlay__text">Carregando Dashboard Metrologia...</p>
+  </div>
+</div>
+
+<!-- App Shell -->
+<div class="app" id="app">
+
+  <!-- Sidebar -->
+  <aside id="sidebar"></aside>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Header -->
+    <header id="header"></header>
+
+    <!-- LED Ticker -->
+    <div id="ticker"></div>
+
+    <!-- Filtros -->
+    <div id="filters-bar" class="filters-bar"></div>
+
+    <!-- KPI Grid -->
+    <div id="kpi-grid" class="kpis"></div>
+
+    <!-- Gráficos -->
+    <div id="content" class="content"></div>
+
+    <!-- Páginas alternativas (cronograma, etc.) -->
+    <div id="crono-page" style="display:none;flex:1;overflow:hidden;min-height:0;"></div>
+
+  </div>
+</div>
+
+<!-- Drawer -->
+<aside id="drawer"></aside>
+
+<img id="_toyota_logo" src="toyota-logo.png.png" style="display:none;width:0;height:0;position:absolute" alt="">
+
+<script>
+(function () {
+  var DEFAULT_LOGO = 'toyota-logo.png.png';
+  var stored = localStorage.getItem('metrologia_logo');
+  var src = stored || DEFAULT_LOGO;
+
+  function inject() {
+    var el = document.querySelector('.sidebar__logo');
+    if (!el) return;
+    var img = el.querySelector('img');
+    if (!img) {
+      el.innerHTML = '';
+      el.style.cssText = 'background:#fff !important;font-size:0 !important;color:transparent !important;padding:3px !important;';
+      img = document.createElement('img');
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+      /* Se a imagem falhar, volta para o padrão */
+      img.onerror = function() {
+        if (img.src.indexOf(DEFAULT_LOGO) === -1) {
+          localStorage.removeItem('metrologia_logo');
+          img.src = DEFAULT_LOGO;
+        }
+      };
+      el.appendChild(img);
+    }
+    img.src = src;
+  }
+
+  /* executa imediatamente e a cada 300ms até o sidebar aparecer */
+  inject();
+  var done = false;
+  var obs = new MutationObserver(function() {
+    if (document.querySelector('.sidebar__logo')) {
+      inject();
+      if (!done) { done = true; setTimeout(inject, 100); setTimeout(inject, 400); }
+    }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+  /* fallback: para o observer após 15s */
+  setTimeout(function() { obs.disconnect(); }, 15000);
+
+  /* troca de logo via Configurações */
+  window.addEventListener('metrologia:logo', function (e) {
+    src = e.detail;
+    inject();
+  });
+})();
+</script>
+
+<script type="module" src="js/app.js"></script>
+
+<!-- PWA: registra o service worker (apenas em http/https, não em file://) -->
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) {
+        console.warn('[PWA] Falha ao registrar service worker:', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>

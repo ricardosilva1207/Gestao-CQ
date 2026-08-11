@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Solicitação de Análise Extra · PFZ CQ</title>
+<style>
+  :root {
+    --blue:    #1a3a6b;
+    --blue-lt: #e8eef7;
+    --accent:  #c8a000;
+    --ok:      #15803d;
+    --danger:  #dc2626;
+    --bg:      #f0f2f5;
+    --card:    #ffffff;
+    --border:  #c8d0da;
+    --text:    #111827;
+    --muted:   #6b7280;
+    --radius:  10px;
+    --red:     #cc0000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; font-size: 14px; }
+
+  /* ── HEADER ── */
+  .hdr {
+    background: var(--blue); padding: 12px 16px 10px;
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .hdr__logo {
+    width: 48px; height: 48px; flex-shrink: 0; border-radius: 6px;
+    background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .hdr__logo img { width: 42px; height: auto; object-fit: contain; }
+  .hdr__logo-fb { font-size: 18px; font-weight: 900; color: var(--blue); }
+  .hdr__text { flex: 1; }
+  .hdr__text h1 { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.3; }
+  .hdr__text p  { font-size: 10px; color: rgba(255,255,255,.65); margin-top: 1px; }
+  .hdr__no { text-align: right; }
+  .hdr__no span { display: block; font-size: 9px; color: rgba(255,255,255,.5); text-transform: uppercase; }
+  .hdr__no strong { font-size: 13px; color: var(--accent); font-weight: 900; letter-spacing: 1px; }
+
+  /* ── URGÊNCIA ── */
+  .urg-wrap { margin: 14px 14px 0; border-radius: var(--radius); overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--border); }
+  .urg-btn { padding: 13px 8px; text-align: center; font-size: 13px; font-weight: 700; background: #fff; border: none; cursor: pointer; transition: all .18s; color: var(--muted); }
+  .urg-btn + .urg-btn { border-left: 1px solid var(--border); }
+  .urg-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+  .urg-btn--normal.sel  { background: var(--ok);     color: #fff; }
+  .urg-btn--urgente.sel { background: var(--danger);  color: #fff; }
+
+  /* ── SEÇÃO ── */
+  .sec { margin: 12px 14px 0; }
+  .sec__title {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+    color: #fff; background: var(--blue); padding: 5px 12px; border-radius: 6px 6px 0 0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sec__body { background: var(--card); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 14px 12px 10px; }
+
+  /* ── FIELD ── */
+  .f { margin-bottom: 12px; }
+  .f:last-child { margin-bottom: 0; }
+  .f label { display: block; font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+  .f label .req { color: var(--danger); margin-left: 2px; }
+  .f input[type=text],
+  .f input[type=email],
+  .f input[type=date],
+  .f input[type=tel],
+  .f select,
+  .f textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 7px;
+    font-size: 14px; color: var(--text); background: #fff; appearance: none; font-family: inherit;
+    transition: border-color .15s;
+  }
+  .f input:focus, .f select:focus, .f textarea:focus { outline: none; border-color: var(--blue); }
+  .f textarea { min-height: 80px; resize: vertical; }
+  .f select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .f-row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 400px) { .f-row { grid-template-columns: 1fr; } }
+
+  /* ── MOTIVO checkboxes ── */
+  .motivo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .motivo-opt {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 10px 6px; border: 1.5px solid var(--border); border-radius: 7px;
+    background: #fff; cursor: pointer; font-size: 12px; font-weight: 700;
+    transition: all .15s; text-align: center; user-select: none;
+  }
+  .motivo-opt input { display: none; }
+  .motivo-opt.sel { border-color: var(--blue); background: var(--blue-lt); color: var(--blue); }
+  .motivo-opt .sub { display: block; font-size: 9px; font-weight: 400; color: var(--muted); margin-top: 1px; }
+  .motivo-opt.sel .sub { color: var(--blue); opacity: .7; }
+
+  /* ── ANEXOS ── */
+  .anex-drop {
+    border: 2px dashed var(--border); border-radius: 8px;
+    padding: 18px 12px; text-align: center; cursor: pointer; transition: border-color .15s;
+    background: #fafbfc;
+  }
+  .anex-drop:hover { border-color: var(--blue); }
+  .anex-drop input { display: none; }
+  .anex-drop p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .anex-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .anex-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--card); font-size: 12px;
+  }
+  .anex-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .anex-item button { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 15px; padding: 0 4px; flex-shrink: 0; }
+  .anex-size { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+  /* ── SEND ── */
+  .send-wrap { margin: 14px 14px 32px; }
+  .send-btn {
+    display: block; width: 100%; padding: 16px; background: var(--blue); color: #fff;
+    border: none; border-radius: var(--radius); font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s; letter-spacing: .3px;
+  }
+  .send-btn:active { opacity: .82; }
+  .send-btn:disabled { opacity: .45; cursor: default; }
+  .send-note { font-size: 10px; color: var(--muted); text-align: center; margin-top: 8px; }
+  .send-note .req { color: var(--danger); }
+
+  /* ── SUCESSO ── */
+  .success {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100dvh; padding: 32px 24px; text-align: center; background: var(--bg);
+  }
+  .success__logo { width: 64px; height: 64px; background: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.1); overflow: hidden; }
+  .success__logo img { width: 56px; height: auto; }
+  .success__logo-fb { font-size: 24px; font-weight: 900; color: var(--blue); }
+  .success__icon  { font-size: 52px; margin-bottom: 10px; }
+  .success__title { font-size: 20px; font-weight: 700; color: var(--ok); margin-bottom: 6px; }
+  .success__sub   { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+  .success__code  {
+    font-size: 26px; font-weight: 900; color: var(--blue); letter-spacing: 3px;
+    background: #fff; border-radius: 10px; padding: 10px 28px; margin-bottom: 6px;
+    border: 2px solid var(--border);
+  }
+  .success__proj  { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .urg-pill { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+  .urg-pill--normal  { background: #dcfce7; color: var(--ok); }
+  .urg-pill--urgente { background: #fee2e2; color: var(--danger); }
+  .success__new {
+    padding: 14px 32px; background: var(--blue); color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .success__email {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; max-width: 320px;
+    padding: 13px 20px; margin-bottom: 12px;
+    background: #fff; color: var(--blue);
+    border: 2px solid var(--blue); border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s;
+  }
+  .success__email:hover { background: var(--blue-lt); }
+  .success__email-hint { font-size: 10px; color: var(--muted); margin-bottom: 18px; }
+
+  /* ── CONFIG MODAL ── */
+  .cfg-btn {
+    background: none; border: none; cursor: pointer; padding: 6px;
+    color: rgba(255,255,255,.5); font-size: 18px; line-height: 1;
+    transition: color .15s; flex-shrink: 0;
+  }
+  .cfg-btn:hover { color: rgba(255,255,255,.9); }
+  .cfg-overlay {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 20px;
+  }
+  .cfg-overlay.open { display: flex; }
+  .cfg-modal {
+    background: #fff; border-radius: 14px; width: 100%; max-width: 420px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.25); overflow: hidden;
+  }
+  .cfg-modal__head {
+    background: var(--blue); padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cfg-modal__head h2 { color: #fff; font-size: 14px; margin: 0; }
+  .cfg-modal__close {
+    background: none; border: none; color: rgba(255,255,255,.7);
+    font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1;
+  }
+  .cfg-modal__body { padding: 16px; }
+  .cfg-hint { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .cfg-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .cfg-item {
+    display: flex; align-items: center; gap: 8px;
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    background: #fafbfc;
+  }
+  .cfg-item input {
+    flex: 1; border: none; background: none; font-size: 13px;
+    color: var(--text); outline: none; font-family: inherit;
+  }
+  .cfg-item__del {
+    background: none; border: none; color: var(--danger);
+    font-size: 16px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+  }
+  .cfg-empty { font-size: 12px; color: var(--muted); font-style: italic; text-align: center; padding: 10px 0; }
+  .cfg-add {
+    width: 100%; padding: 10px; background: var(--blue-lt); color: var(--blue);
+    border: 1.5px dashed var(--blue); border-radius: 8px;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+  }
+  .cfg-add:hover { background: #d4e0f5; }
+  .cfg-modal__foot {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .cfg-save {
+    padding: 9px 22px; background: var(--blue); color: #fff;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .cfg-cancel {
+    padding: 9px 16px; background: none; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 13px; cursor: pointer;
+  }
+
+  /* Campos obrigatorios — fundo cinza claro */
+  .f input[required], .f select[required], .f textarea[required],
+  .f input.req-field, .f select.req-field {
+    background-color: #f4f5f7 !important;
+    border-color: #b0b8c4;
+  }
+  .f input[required]:focus, .f select[required]:focus {
+    background-color: #fff !important;
+    border-color: var(--blue);
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────── -->
+<div class="hdr">
+  <div class="hdr__logo" id="hdr-logo">
+    <img src="toyota-logo.png.png" alt="Toyota" onerror="this.parentElement.innerHTML='<span class=hdr__logo-fb>T</span>'">
+  </div>
+  <div class="hdr__text">
+    <h1>Solicitação de Análise Extra</h1>
+    <p>PFZ CQ · Depto. Controle da Qualidade · Metrologia</p>
+  </div>
+  <button class="cfg-btn" onclick="abrirConfig()" title="Configurar destinatários CQ">⚙</button>
+</div>
+
+<!-- ── CONFIG MODAL ─────────────────────────────── -->
+<div class="cfg-overlay" id="cfg-overlay" onclick="if(event.target===this)fecharConfig()">
+  <div class="cfg-modal">
+    <div class="cfg-modal__head">
+      <h2>⚙ Destinatários Fixos — Equipe CQ</h2>
+      <button class="cfg-modal__close" onclick="fecharConfig()">×</button>
+    </div>
+    <div class="cfg-modal__body">
+      <p class="cfg-hint">
+        Estes e-mails são adicionados automaticamente em cópia (CC) em toda notificação enviada pelo Outlook. Configure uma vez — fica salvo no dispositivo.
+      </p>
+      <div class="cfg-list" id="cfg-list"></div>
+      <button class="cfg-add" onclick="adicionarDestinatarioCQ()">+ Adicionar e-mail</button>
+    </div>
+    <div class="cfg-modal__foot">
+      <button class="cfg-cancel" onclick="fecharConfig()">Cancelar</button>
+      <button class="cfg-save" onclick="salvarConfig()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FORMULÃRIO ─────────────────────────────────── -->
+<!-- ── BANNER FILA OFFLINE ────────────────────────── -->
+<div id="queue-banner" style="display:none;align-items:center;gap:10px;margin:12px 14px 0;padding:10px 14px;
+     background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;font-size:12px;color:#92400e;">
+  <span style="font-size:18px;">📡</span>
+  <span style="flex:1;">
+    <strong><span id="queue-count">0</span> solicitação(ões)</strong> aguardando envio (servidor offline).
+    Serão enviadas automaticamente quando a conexão voltar.
+  </span>
+  <button onclick="_syncQueue()" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;
+          padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">↻ Tentar agora</button>
+</div>
+
+<div id="form-area">
+
+  <!-- Urgência -->
+  <div class="urg-wrap">
+    <button class="urg-btn urg-btn--normal sel" onclick="setUrg('normal')">
+      <span class="urg-icon">✅</span>Normal
+    </button>
+    <button class="urg-btn urg-btn--urgente" onclick="setUrg('urgente')">
+      <span class="urg-icon">🚨</span>Urgente
+    </button>
+  </div>
+
+  <!-- 1. Identificação da Peça -->
+  <div class="sec">
+    <div class="sec__title">📋 Identificação · 識別</div>
+    <div class="sec__body">
+      <div class="f-row">
+        <div class="f">
+          <label>Projeto (Modelo / 型å¼) <span class="req">*</span></label>
+          <select id="sel-projeto" onchange="atualizarLinhas()">
+            <option value="">Selecione...</option>
+            <option value="NEXTB">NEXTB</option>
+            <option value="M20A">M20A</option>
+            <option value="SHAFT">SHAFT</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Linha <span class="req">*</span></label>
+          <select id="sel-linha">
+            <option value="">Selecione o projeto</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f">
+          <label>Processo</label>
+          <input type="text" id="inp-processo" placeholder="Ex: Usinagem HEAD" autocomplete="off">
+        </div>
+        <div class="f">
+          <label>Operação</label>
+          <input type="text" id="inp-operacao" placeholder="Ex: OP.140" autocomplete="off">
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f">
+          <label>Part No.</label>
+          <input type="text" id="inp-partno" placeholder="Ex: 12345-0H030" autocomplete="off">
+        </div>
+        <div class="f">
+          <label>Part Name <span class="req">*</span></label>
+          <input type="text" id="inp-partname" required placeholder="Ex: CYL. HEAD ASSY" autocomplete="off">
+        </div>
+      </div>
+      <div class="f">
+        <label>Título / 題å <span class="req">*</span></label>
+        <input type="text" id="inp-titulo" required placeholder="Título resumido da solicitação" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Solicitante -->
+  <div class="sec">
+    <div class="sec__title">👤 Solicitante · ä¾頼者</div>
+    <div class="sec__body">
+      <div class="f-row">
+        <div class="f">
+          <label>Nome <span class="req">*</span></label>
+          <input type="text" id="inp-solicitante" required placeholder="Nome completo" autocomplete="off">
+        </div>
+        <div class="f">
+          <label>Depto. / Seção</label>
+          <input type="text" id="inp-depto" placeholder="Ex: Produção SV" autocomplete="off">
+        </div>
+      </div>
+      <div class="f">
+        <label>E-mail do Solicitante <span class="req">*</span></label>
+        <input type="email" id="inp-email-sol" required placeholder="solicitante@toyota.com.br" autocomplete="off">
+      </div>
+      <div class="f">
+        <label>E-mail Supervisor / Engenheiro Responsável <span class="req">*</span></label>
+        <input type="email" id="inp-email-resp" required placeholder="supervisor@toyota.com.br" autocomplete="off">
+      </div>
+      <div class="f">
+        <label>Tel. (opcional)</label>
+        <input type="tel" id="inp-tel" placeholder="Ex: (41) 9 9999-9999" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Análise -->
+  <div class="sec">
+    <div class="sec__title">ðŸ” Conteúdo da Análise · 評価内容</div>
+    <div class="sec__body">
+
+      <div class="f">
+        <label>Motivo / ç†由 <span class="req">*</span></label>
+        <div class="motivo-grid" id="motivo-grid">
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="Projeto" autocomplete="off">
+            <span>Projeto<span class="sub">新è¦</span></span>
+          </label>
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="ECI" autocomplete="off">
+            <span>ECI<span class="sub">設変</span></span>
+          </label>
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="Inspeção" autocomplete="off">
+            <span>Inspeção<span class="sub">検査</span></span>
+          </label>
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="Investigação" autocomplete="off">
+            <span>Invest.<span class="sub">調査</span></span>
+          </label>
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="Try-out" autocomplete="off">
+            <span>Try-out<span class="sub">トライ</span></span>
+          </label>
+          <label class="motivo-opt" onclick="toggleMotivo(this)">
+            <input type="checkbox" value="Outros" autocomplete="off">
+            <span>Outros<span class="sub">ãã®他</span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="f">
+        <label>Objetivo / 目的 <span class="req">*</span></label>
+        <textarea id="inp-objetivo" placeholder="Descreva o objetivo desta análise..." autocomplete="off"></textarea>
+      </div>
+
+      <div class="f">
+        <label>Condição anterior / ç¾状</label>
+        <textarea id="inp-condicao" placeholder="Descreva a situação atual / condição anterior..." autocomplete="off"></textarea>
+      </div>
+
+      <div class="f">
+        <label>Conteúdo avaliação / 評価内容</label>
+        <textarea id="inp-conteudo" placeholder="Descreva o conteúdo a ser avaliado..." autocomplete="off"></textarea>
+      </div>
+
+      <div class="f-row">
+        <div class="f">
+          <label>Emissão / 発行日</label>
+          <input type="date" id="inp-emissao" autocomplete="off">
+        </div>
+        <div class="f">
+          <label>Prazo / 期é™</label>
+          <input type="date" id="inp-prazo" autocomplete="off">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 4. Anexos -->
+  <div class="sec">
+    <div class="sec__title">📎 Anexos / Arquivos</div>
+    <div class="sec__body">
+      <div class="anex-drop" onclick="document.getElementById('anex-inp').click()">
+        <input type="file" id="anex-inp" multiple accept="image/*,.pdf,.xlsx,.xls,.doc,.docx" onchange="adicionarAnexos(this)" autocomplete="off">
+        <div style="font-size:28px;">📂</div>
+        <p>Toque para selecionar arquivos<br><span style="font-size:10px;">Imagens, PDF, Excel, Word</span></p>
+      </div>
+      <div class="anex-list" id="anex-list"></div>
+    </div>
+  </div>
+
+  <!-- Enviar -->
+  <div class="send-wrap">
+    <button class="send-btn" id="btn-enviar" onclick="enviar()">📤 Enviar Solicitação</button>
+    <p class="send-note"><span class="req">*</span> Campos obrigatórios · INSPEÇÃO014 – 3 PILLARS2 – TL BOARD</p>
+  </div>
+
+</div><!-- /form-area -->
+
+<!-- ── SUCESSO ────────────────────────────────────── -->
+<div class="success" id="success-area">
+  <div class="success__logo">
+    <img src="toyota-logo.png.png" alt="Toyota" onerror="this.parentElement.innerHTML='<span class=success__logo-fb>T</span>'">
+  </div>
+  <div class="success__icon">✅</div>
+  <div class="success__title">Solicitação Enviada!</div>
+  <div id="urg-pill-area"></div>
+  <p class="success__sub">A equipe de Metrologia PFZ CQ foi notificada.<br>Guarde o código de referência abaixo.</p>
+  <div id="success-offline" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;
+       padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e;max-width:340px;line-height:1.5;">
+    📡 <strong>Salvo no dispositivo.</strong> O servidor estava indisponível — a solicitação será
+    enviada automaticamente assim que a conexão voltar. Não feche sem reenviar o e-mail abaixo.
+  </div>
+  <div class="success__code" id="success-code">—</div>
+  <p class="success__proj" id="success-detail"></p>
+  <button class="success__email" id="btn-email" onclick="notificarEmail()">
+    📧 Reenviar notificação
+  </button>
+  <p class="success__email-hint">O Outlook foi aberto automaticamente — clique acima se precisar reenviar</p>
+  <button class="success__new" onclick="novaSolicitacao()">+ Nova Solicitação</button>
+</div>
+
+<script>
+/* ─ Detecta abertura por file:// e redireciona ─ */
+(function () {
+  if (location.protocol === 'file:') {
+    document.body.innerHTML = `
+      <div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;
+                  background:#f0f2f5;font-family:Arial,sans-serif;padding:24px;text-align:center;">
+        <div style="background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;
+                    box-shadow:0 4px 24px rgba(0,0,0,.12);">
+          <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+          <h2 style="color:#1a3a6b;font-size:18px;margin-bottom:10px;">
+            Abra pelo servidor
+          </h2>
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin-bottom:20px;">
+            Este formulário não funciona quando aberto diretamente pelo Windows Explorer.<br><br>
+            <strong>Inicie o Dashboard</strong> com o arquivo <code style="background:#f0f2f5;padding:2px 6px;border-radius:4px;">abrir-dashboard.bat</code> e acesse pelo link abaixo:
+          </p>
+          <a href="http://localhost:8080/solicitar-analise.html"
+             style="display:block;padding:14px 20px;background:#1a3a6b;color:#fff;
+                    border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;
+                    margin-bottom:10px;">
+            Abrir formulário corretamente
+          </a>
+          <p style="font-size:11px;color:#9ca3af;">http://localhost:8080/solicitar-analise.html</p>
+        </div>
+      </div>`;
+  }
+})();
+
+/* ─ Config destinatários CQ ─ */
+const CFG_KEY = 'pfzcq_cq_emails';
+let _cfgEmails = [];   // cópia editável no modal
+
+// E-mails fixos da equipe CQ — sempre incluídos em cópia (CC)
+const CQ_EMAILS_FIXOS = [
+  'rgdsilva@toyota.com.br',
+];
+
+function _loadCQEmails() {
+  try {
+    const salvos = JSON.parse(localStorage.getItem(CFG_KEY) || '[]');
+    // Mescla fixos + configurados, sem duplicatas
+    return [...new Set([...CQ_EMAILS_FIXOS, ...salvos])];
+  } catch { return [...CQ_EMAILS_FIXOS]; }
+}
+function _saveCQEmails(list) {
+  localStorage.setItem(CFG_KEY, JSON.stringify(list));
+}
+
+function abrirConfig() {
+  _cfgEmails = [..._loadCQEmails()];
+  renderCfgList();
+  document.getElementById('cfg-overlay').classList.add('open');
+}
+function fecharConfig() {
+  document.getElementById('cfg-overlay').classList.remove('open');
+}
+function salvarConfig() {
+  const inputs = document.querySelectorAll('#cfg-list .cfg-item input');
+  const emails = Array.from(inputs)
+    .map(i => i.value.trim())
+    .filter(e => e && e.includes('@'));
+  _saveCQEmails(emails);
+  fecharConfig();
+}
+function adicionarDestinatarioCQ() {
+  _cfgEmails.push('');
+  renderCfgList();
+  // foca o novo campo
+  const inputs = document.querySelectorAll('#cfg-list .cfg-item input');
+  inputs[inputs.length - 1]?.focus();
+}
+function renderCfgList() {
+  const list = document.getElementById('cfg-list');
+  list.innerHTML = '';
+  if (!_cfgEmails.length) {
+    const empty = document.createElement('div');
+    empty.className = 'cfg-empty';
+    empty.textContent = 'Nenhum destinatário cadastrado.';
+    list.appendChild(empty);
+    return;
+  }
+  _cfgEmails.forEach((email, idx) => {
+    const item = document.createElement('div');
+    item.className = 'cfg-item';
+    const inp = document.createElement('input');
+    inp.type = 'email'; inp.placeholder = 'email@toyota.com.br'; inp.value = email;
+    inp.addEventListener('input', () => { _cfgEmails[idx] = inp.value; });
+    const del = document.createElement('button');
+    del.className = 'cfg-item__del'; del.textContent = '✕'; del.title = 'Remover';
+    del.addEventListener('click', () => { _cfgEmails.splice(idx, 1); renderCfgList(); });
+    item.appendChild(inp); item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+
+/* ─ Mailto ─ */
+let _lastPayload = null;   // guarda payload do último envio para o mailto
+
+function buildMailto(p) {
+  const urgente = p.urgencia === 'urgente';
+  const prefix  = urgente ? '[URGENTE] ' : '';
+  const assunto = encodeURIComponent(
+    `${prefix}[Metrologia PFZ CQ] Nova Solicitação — ${p.titulo ?? ''}`
+  );
+
+  const motivos = (p.motivos ?? []).join(', ') || '—';
+  const prazo   = p.prazo   || '—';
+  const ts      = new Date().toLocaleDateString('pt-BR');
+
+  const corpo = [
+    'Prezado(a),',
+    '',
+    'Uma nova solicitação de Análise Extra foi registrada no sistema Metrologia PFZ CQ.',
+    '',
+    urgente
+      ? '*** URGENTE — REQUER ATENÇÃO IMEDIATA ***'
+      : 'Prioridade: Normal',
+    '',
+    `ID:           ${(p.id ?? '').toUpperCase()}`,
+    `Data:         ${ts}`,
+    `Projeto:      ${p.projeto ?? '—'} / ${p.linha ?? '—'}`,
+    `Processo:     ${p.processo || '—'} / ${p.operacao || '—'}`,
+    `Part No.:     ${p.partNo ?? '—'}`,
+    `Part Name:    ${p.partName ?? '—'}`,
+    `Título:       ${p.titulo ?? '—'}`,
+    `Motivo:       ${motivos}`,
+    `Prazo:        ${prazo}`,
+    '',
+    `Solicitante:  ${p.solicitante ?? '—'} — ${p.depto ?? ''}`,
+    `E-mail:       ${p.emailSol ?? '—'}`,
+    '',
+    p.objetivo ? `Objetivo:\n${p.objetivo}\n` : '',
+    p.conteudo ? `Conteúdo Avaliação:\n${p.conteudo}\n` : '',
+    '',
+    'Por favor, agende a análise assim que possível.',
+    '',
+    'Atenciosamente,',
+    'Sistema de Metrologia PFZ CQ',
+  ].filter(l => l !== undefined).join('\r\n');
+
+  // Para: supervisor/resp
+  const to = p.emailResp || '';
+
+  // CC: solicitante + supervisor/resp + equipe CQ configurada
+  const cqEmails = _loadCQEmails();
+  const ccSet = new Set(cqEmails);
+  if (p.emailSol) ccSet.add(p.emailSol);
+  if (p.emailResp) ccSet.add(p.emailResp);
+  const cc = [...ccSet].filter(Boolean);
+
+  let href = `mailto:${to}?subject=${assunto}&body=${encodeURIComponent(corpo)}`;
+  if (cc.length) href += `&cc=${encodeURIComponent(cc.join(';'))}`;
+  return href;
+}
+
+function notificarEmail() {
+  if (!_lastPayload) return;
+  window.location.href = buildMailto(_lastPayload);
+}
+
+/* ─ Dados ─ */
+const LINHAS = {
+  NEXTB: ['Fundição','Usinagem','Fornecedor'],
+  M20A:  ['Fundição','Usinagem','Fornecedor'],
+  SHAFT: ['Forjaria','Cold','Usinagem'],
+};
+let _urgencia = 'normal';
+let _anexos   = [];   // { name, size, type, data (base64) }
+
+
+/* ─ Data padrão ─ */
+document.getElementById('inp-emissao').value = new Date().toISOString().split('T')[0];
+
+/* ─ Urgência ─ */
+function setUrg(u) {
+  _urgencia = u;
+  document.querySelectorAll('.urg-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelector('.urg-btn--' + u).classList.add('sel');
+}
+
+/* ─ Linhas ─ */
+function atualizarLinhas() {
+  const proj = document.getElementById('sel-projeto').value;
+  const sel  = document.getElementById('sel-linha');
+  sel.innerHTML = '<option value="">Selecione a linha...</option>';
+  (LINHAS[proj] || []).forEach(l => {
+    const o = document.createElement('option'); o.value = o.text = l; sel.appendChild(o);
+  });
+}
+
+/* ─ Motivo ─ */
+function toggleMotivo(lbl) {
+  // toggled via click; prevent double-toggle from label
+  event.preventDefault();
+  const cb = lbl.querySelector('input');
+  cb.checked = !cb.checked;
+  lbl.classList.toggle('sel', cb.checked);
+}
+
+/* ─ Anexos ─ */
+function adicionarAnexos(inp) {
+  Array.from(inp.files).forEach(file => {
+    if (_anexos.find(a => a.name === file.name && a.size === file.size)) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      _anexos.push({ name: file.name, size: file.size, type: file.type, data: e.target.result });
+      renderAnexos();
+    };
+    reader.readAsDataURL(file);
+  });
+  inp.value = '';
+}
+function renderAnexos() {
+  const list = document.getElementById('anex-list');
+  list.innerHTML = '';
+  _anexos.forEach((a, i) => {
+    const row = document.createElement('div'); row.className = 'anex-item';
+    const icon = a.type.startsWith('image/') ? '🖼' : a.type.includes('pdf') ? '📄' : '📊';
+    const sz   = a.size < 1024*1024 ? Math.round(a.size/1024) + ' KB' : (a.size/1024/1024).toFixed(1) + ' MB';
+    row.innerHTML = `<span>${icon}</span><span>${a.name}</span><span class="anex-size">${sz}</span>
+      <button onclick="_anexos.splice(${i},1);renderAnexos()">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+/* ─ Enviar ─ */
+async function enviar() {
+  const v = (id) => document.getElementById(id)?.value.trim() || '';
+  const projeto     = document.getElementById('sel-projeto').value;
+  const linha       = document.getElementById('sel-linha').value;
+  const partno      = v('inp-partno');
+  const partname    = v('inp-partname');
+  const titulo      = v('inp-titulo');
+  const solicitante = v('inp-solicitante');
+  const emailSol    = v('inp-email-sol');
+  const emailResp   = v('inp-email-resp');
+
+  // Motivos selecionados
+  const motivos = Array.from(document.querySelectorAll('#motivo-grid input:checked')).map(cb => cb.value);
+
+  // Validação
+  if (!projeto)     { alert('Selecione o Projeto.'); return; }
+  if (!linha)       { alert('Selecione a Linha.'); return; }
+  if (!partname)    { alert('Informe o Part Name.'); return; }
+  if (!titulo)      { alert('Informe o Título da solicitação.'); return; }
+  if (!solicitante) { alert('Informe o nome do solicitante.'); return; }
+  if (!emailSol)    { alert('Informe o e-mail do solicitante.'); return; }
+  if (!emailResp)   { alert('Informe o e-mail do supervisor / engenheiro responsável.'); return; }
+  if (!motivos.length) { alert('Selecione ao menos um Motivo.'); return; }
+
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  const payload = {
+    urgencia:    _urgencia,
+    projeto, linha,
+    processo:    v('inp-processo'),
+    operacao:    v('inp-operacao'),
+    partNo:      partno,
+    partName:    partname,
+    titulo,
+    solicitante,
+    depto:       v('inp-depto'),
+    emailSol,
+    emailResp,
+    tel:         v('inp-tel'),
+    motivos,
+    objetivo:    v('inp-objetivo'),
+    condicao:    v('inp-condicao'),
+    conteudo:    v('inp-conteudo'),
+    emissao:     v('inp-emissao'),
+    prazo:       v('inp-prazo'),
+    anexos:      _anexos,
+  };
+
+  try {
+    const res = await fetch('/api/solicitar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+
+    // Guarda payload para o botão de e-mail
+    _lastPayload = { ...payload, id: data.id };
+
+    // Dispara e-mail automaticamente via Outlook
+    setTimeout(() => {
+      window.location.href = buildMailto(_lastPayload);
+    }, 300);
+
+    // Tela de sucesso
+    mostrarSucesso(data.id, projeto, linha, partno, titulo, false);
+
+  } catch (err) {
+    // ── Servidor indisponível → enfileira offline em vez de perder os dados ──
+    const localId = _enqueueOffline(payload);
+    _lastPayload = { ...payload, id: localId };
+    mostrarSucesso(localId, projeto, linha, partno, titulo, true);
+  }
+}
+
+/* ─ Mostra tela de sucesso (online ou offline) ─ */
+function mostrarSucesso(id, projeto, linha, partno, titulo, offline) {
+  document.getElementById('success-code').textContent = (id ?? '—').toUpperCase();
+  document.getElementById('urg-pill-area').innerHTML =
+    `<div class="urg-pill urg-pill--${_urgencia}">${_urgencia === 'urgente' ? '🚨 URGENTE' : '✅ Normal'}</div>`;
+  document.getElementById('success-detail').textContent =
+    `${projeto} › ${linha} · ${partno} — ${titulo}`;
+
+  // Aviso de modo offline
+  const offEl = document.getElementById('success-offline');
+  if (offEl) offEl.style.display = offline ? 'block' : 'none';
+
+  document.getElementById('form-area').style.display = 'none';
+  document.getElementById('success-area').style.display = 'flex';
+  _renderQueueBanner();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FILA OFFLINE — persiste solicitações quando o servidor cai
+   e sincroniza automaticamente quando ele volta.
+   ═══════════════════════════════════════════════════════════ */
+const QUEUE_KEY = 'pfzcq_fila_offline';
+
+function _loadQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
+  catch { return []; }
+}
+function _saveQueue(q) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+
+/** Adiciona à fila e retorna um ID local provisório */
+function _enqueueOffline(payload) {
+  const localId = 'off-' + Date.now().toString(36);
+  const q = _loadQueue();
+  q.push({ ...payload, _localId: localId, _savedAt: new Date().toISOString() });
+  _saveQueue(q);
+  return localId;
+}
+
+/** Tenta reenviar todos os itens pendentes ao servidor */
+async function _syncQueue() {
+  const q = _loadQueue();
+  if (!q.length) return;
+
+  const restantes = [];
+  let enviados = 0;
+  for (const item of q) {
+    const { _localId, _savedAt, ...payload } = item;
+    try {
+      const res = await fetch('/api/solicitar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) { enviados++; continue; }
+      restantes.push(item); // erro do servidor — mantém na fila
+    } catch {
+      restantes.push(item); // ainda offline — mantém todos os restantes
+      // não adianta tentar os próximos se a rede está fora
+      restantes.push(...q.slice(q.indexOf(item) + 1));
+      break;
+    }
+  }
+  _saveQueue(restantes);
+  _renderQueueBanner();
+  if (enviados > 0) {
+    console.info(`[Fila] ${enviados} solicitação(ões) sincronizada(s).`);
+  }
+}
+
+/** Atualiza o banner que mostra quantas solicitações estão pendentes de envio */
+function _renderQueueBanner() {
+  const el = document.getElementById('queue-banner');
+  if (!el) return;
+  const n = _loadQueue().length;
+  if (n === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.querySelector('#queue-count').textContent = n;
+}
+
+// Sincroniza ao carregar, ao voltar a ficar online, e periodicamente
+window.addEventListener('online',  _syncQueue);
+window.addEventListener('load', () => { _renderQueueBanner(); _syncQueue(); });
+setInterval(_syncQueue, 60000);
+
+/* ─ Nova solicitação ─ */
+function novaSolicitacao() {
+  ['inp-processo','inp-operacao','inp-partno','inp-partname','inp-titulo',
+   'inp-solicitante','inp-depto','inp-email-sol','inp-email-resp','inp-tel',
+   'inp-objetivo','inp-condicao','inp-conteudo','inp-prazo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('sel-projeto').value = '';
+  atualizarLinhas();
+  document.querySelectorAll('#motivo-grid .motivo-opt').forEach(l => {
+    l.classList.remove('sel');
+    l.querySelector('input').checked = false;
+  });
+  setUrg('normal');
+  _anexos = []; renderAnexos();
+  document.getElementById('inp-emissao').value = new Date().toISOString().split('T')[0];
+
+
+  document.getElementById('btn-enviar').disabled = false;
+  document.getElementById('btn-enviar').textContent = '📤 Enviar Solicitação';
+  document.getElementById('success-area').style.display = 'none';
+  document.getElementById('form-area').style.display = '';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
+
