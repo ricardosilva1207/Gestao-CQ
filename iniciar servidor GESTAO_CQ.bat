@@ -9,26 +9,44 @@ echo   Iniciando Servidor: Gerenciamento de Atividade CQ
 echo  ==================================================
 echo.
 
-REM Detecta interpretador Python disponivel (python ou py)
-where python >nul 2>nul
-if %errorlevel%==0 (
-    set "PY=python"
-) else (
-    where py >nul 2>nul
-    if %errorlevel%==0 (
-        set "PY=py -3"
-    ) else (
-        echo [ERRO] Python nao encontrado no PATH.
-        echo Instale o Python 3 em https://www.python.org/downloads/ e tente novamente.
-        echo.
-        pause
-        exit /b 1
-    )
+REM ---- Localiza Python ----
+set "PY="
+where python >nul 2>nul && set "PY=python"
+if not defined PY where py >nul 2>nul && set "PY=py -3"
+
+if not defined PY (
+    echo [ERRO] Python nao foi encontrado no PATH.
+    echo.
+    echo    Instale o Python 3 em https://www.python.org/downloads/
+    echo    Durante a instalacao, marque a opcao "Add Python to PATH".
+    echo.
+    pause
+    exit /b 1
 )
 
-REM Sobe o servidor
+REM ---- Verifica servidor.py ----
+if not exist "%~dp0servidor.py" (
+    echo [ERRO] Arquivo servidor.py nao encontrado em:
+    echo   %~dp0
+    echo.
+    pause
+    exit /b 1
+)
+
+echo Usando Python: %PY%
+echo Pasta:         %~dp0
+echo.
+
+REM ---- Executa o servidor ----
 %PY% "%~dp0servidor.py"
+set "RC=%errorlevel%"
 
 echo.
-echo Servidor encerrado.
+if not "%RC%"=="0" (
+    echo [ERRO] O servidor encerrou com codigo %RC%.
+) else (
+    echo Servidor encerrado normalmente.
+)
+
+echo.
 pause
