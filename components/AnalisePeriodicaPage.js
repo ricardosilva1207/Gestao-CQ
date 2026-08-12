@@ -387,6 +387,7 @@ export class AnalisePeriodicaPage {
           transition: all .15s; white-space: nowrap;
         }
         .ap-page__back:hover { border-color: var(--accent,#4ea3ff); color: var(--accent,#4ea3ff); }
+        .ap-page__back--danger:hover { border-color: #ef4444; color: #ef4444; }
         .ap-page__title { font-size: 14px; font-weight: 700; flex: 1; color: var(--text); }
         .ap-page__badge {
           font-size: 11px; color: var(--text-mute);
@@ -618,10 +619,16 @@ export class AnalisePeriodicaPage {
     histBtn.innerHTML = '📋 Histórico Periódico';
     histBtn.addEventListener('click', () => this._bus?.emit('nav:change', { page: 'hist-periodica' }));
 
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'ap-page__back ap-page__back--danger';
+    removeBtn.innerHTML = '🗑 Remover Checagem';
+    removeBtn.addEventListener('click', () => this._openRemoverChecagemModal());
+
     topbar.appendChild(backBtn);
     topbar.appendChild(titleEl);
     topbar.appendChild(this._topBadge);
     topbar.appendChild(histBtn);
+    topbar.appendChild(removeBtn);
     this._page.appendChild(topbar);
 
     /* Barra de progresso */
@@ -2040,6 +2047,177 @@ ${d.fotoOrderImg ? `
   _saveCustom(arr) {
     localStorage.setItem('metrologia_check_sheets', JSON.stringify(arr));
   }
+
+  /* ══════════════════════════════════════════════════════════
+     REMOVER CHECAGEM (protegido por senha)
+  ══════════════════════════════════════════════════════════ */
+  static _REMOVER_SENHA = '12080';
+  static _HIST_KEY      = 'metrologia_periodica_hist';
+
+  _openRemoverChecagemModal() {
+    // 1) Injeta CSS uma vez
+    if (!document.getElementById('_rc_css')) {
+      const s = document.createElement('style');
+      s.id = '_rc_css';
+      s.textContent = `
+        .rc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(3px); z-index:2200; display:flex; align-items:center; justify-content:center; }
+        .rc-box { background:var(--panel,#131c2e); border:1px solid var(--border); border-radius:12px; padding:22px; width:min(720px,94vw); max-height:88vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.55); }
+        .rc-title { font-size:15px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px; color:var(--text); }
+        .rc-title small { font-size:11px; color:var(--text-mute); font-weight:400; }
+        .rc-hint  { font-size:12px; color:var(--text-mute); margin-bottom:10px; }
+        .rc-pass  { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font-size:14px; letter-spacing:.5em; text-align:center; }
+        .rc-pass:focus { outline:none; border-color:var(--accent,#4ea3ff); }
+        .rc-err   { color:#ef4444; font-size:12px; margin-top:8px; text-align:center; min-height:16px; }
+        .rc-list  { flex:1; overflow-y:auto; margin-top:12px; border:1px solid var(--border); border-radius:8px; background:var(--panel-2); }
+        .rc-row   { display:grid; grid-template-columns:90px 60px 1fr 1fr 100px 40px; gap:8px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); font-size:12px; color:var(--text); }
+        .rc-row:last-child { border-bottom:none; }
+        .rc-row:hover { background:rgba(78,163,255,.05); }
+        .rc-row__data { color:var(--text-mute); font-family:monospace; font-size:11px; }
+        .rc-row__turno { color:var(--accent,#4ea3ff); font-weight:700; font-size:11px; }
+        .rc-row__peca { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .rc-row__ctx  { color:var(--text-mute); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .rc-row__status { font-size:10px; font-weight:700; text-transform:uppercase; }
+        .rc-row__status--ok  { color:#22c55e; }
+        .rc-row__status--nok { color:#ef4444; }
+        .rc-row__status--na  { color:var(--text-mute); }
+        .rc-del { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text-mute); font-size:14px; cursor:pointer; transition:all .15s; }
+        .rc-del:hover { border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,.08); }
+        .rc-empty { padding:24px; text-align:center; color:var(--text-mute); font-size:13px; font-style:italic; }
+        .rc-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+        .rc-btn { padding:8px 14px; border-radius:7px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); font-size:12px; cursor:pointer; }
+        .rc-btn:hover { border-color:var(--accent,#4ea3ff); color:var(--accent,#4ea3ff); }
+      `;
+      document.head.appendChild(s);
+    }
+
+    // 2) Overlay + caixa com prompt de senha
+    const overlay = document.createElement('div');
+    overlay.className = 'rc-overlay';
+    const box = document.createElement('div');
+    box.className = 'rc-box';
+    box.innerHTML = `
+      <h4 class="rc-title">🔒 Remover Checagem <small>· ação protegida por senha</small></h4>
+      <div class="rc-hint">Digite a senha para acessar a lista de checagens e remover entradas do histórico:</div>
+      <input type="password" class="rc-pass" id="rcPass" inputmode="numeric" maxlength="20" autocomplete="off" />
+      <div class="rc-err" id="rcErr"></div>
+      <div class="rc-actions">
+        <button class="rc-btn" id="rcCancel">Cancelar</button>
+        <button class="rc-btn" id="rcOk" style="border-color:var(--accent,#4ea3ff); color:var(--accent,#4ea3ff);">Continuar</button>
+      </div>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    const passInp = box.querySelector('#rcPass');
+    const errEl   = box.querySelector('#rcErr');
+    setTimeout(() => passInp.focus(), 30);
+
+    const tryUnlock = () => {
+      if ((passInp.value ?? '').trim() === AnalisePeriodicaPage._REMOVER_SENHA) {
+        this._renderRemoverList(box, overlay);
+      } else {
+        errEl.textContent = 'Senha incorreta.';
+        passInp.value = '';
+        passInp.focus();
+      }
+    };
+    box.querySelector('#rcOk').addEventListener('click', tryUnlock);
+    box.querySelector('#rcCancel').addEventListener('click', () => overlay.remove());
+    passInp.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  }
+
+  async _renderRemoverList(box, overlay) {
+    const esc = (v) => { const el = document.createElement('div'); el.textContent = String(v ?? ''); return el.innerHTML; };
+
+    // Carrega histórico (servidor + local, dedup por ts)
+    const registros = await this._carregarHistoricoMerged();
+    registros.sort((a, b) => (b.ts ?? '').localeCompare(a.ts ?? ''));
+
+    box.innerHTML = `
+      <h4 class="rc-title">🗑 Remover Checagem <small>· ${registros.length} registro(s)</small></h4>
+      <div class="rc-hint">Clique no ícone 🗑 para remover uma checagem. Ação não pode ser desfeita.</div>
+      <div class="rc-list" id="rcList"></div>
+      <div class="rc-actions">
+        <button class="rc-btn" id="rcClose">Fechar</button>
+      </div>
+    `;
+    const listEl = box.querySelector('#rcList');
+    box.querySelector('#rcClose').addEventListener('click', () => overlay.remove());
+
+    const render = () => {
+      listEl.innerHTML = '';
+      if (!registros.length) {
+        listEl.innerHTML = `<div class="rc-empty">Nenhuma checagem registrada.</div>`;
+        return;
+      }
+      registros.forEach(r => {
+        const dataStr = r.dataAnalise
+          ? r.dataAnalise.split('-').reverse().join('/')
+          : (r.ts ? new Date(r.ts).toLocaleDateString('pt-BR') : '—');
+        const peca = [r.pecaNome, r.nrOrder].filter(Boolean).join(' · ') || '—';
+        const ctx  = [r.projeto, r.linha, r.operacao, r.tipo].filter(Boolean).join(' · ') || '—';
+        const stCls = r.status === 'Conforme' ? 'ok' : r.status === 'Não Conforme' ? 'nok' : 'na';
+        const stTxt = r.status || 'Sem avaliação';
+
+        const row = document.createElement('div');
+        row.className = 'rc-row';
+        row.innerHTML = `
+          <div class="rc-row__data">${dataStr}</div>
+          <div class="rc-row__turno">T${r.turno ?? 1}</div>
+          <div class="rc-row__peca" title="${esc(peca)}">${esc(peca)}</div>
+          <div class="rc-row__ctx"  title="${esc(ctx)}">${esc(ctx)}</div>
+          <div class="rc-row__status rc-row__status--${stCls}">${esc(stTxt)}</div>
+          <div><button class="rc-del" title="Remover">🗑</button></div>
+        `;
+        row.querySelector('.rc-del').addEventListener('click', async () => {
+          if (!confirm(`Remover esta checagem?\n\n${dataStr} · ${peca}`)) return;
+          const ok = await this._removerChecagem(r);
+          if (ok) {
+            const idx = registros.indexOf(r);
+            if (idx >= 0) registros.splice(idx, 1);
+            render();
+            box.querySelector('.rc-title small').textContent = `· ${registros.length} registro(s)`;
+          }
+        });
+        listEl.appendChild(row);
+      });
+    };
+    render();
+  }
+
+  async _carregarHistoricoMerged() {
+    let serverHist = [];
+    try {
+      const res = await fetch('/api/periodica', { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.json();
+        if (Array.isArray(arr)) serverHist = arr;
+      }
+    } catch {}
+    let localHist = [];
+    try { localHist = JSON.parse(localStorage.getItem(AnalisePeriodicaPage._HIST_KEY) ?? '[]'); } catch {}
+    const serverTs = new Set(serverHist.map(e => e.ts));
+    return [...serverHist, ...localHist.filter(e => !serverTs.has(e.ts))];
+  }
+
+  async _removerChecagem(reg) {
+    // 1. Servidor (se o ts estiver lá)
+    if (reg?.ts) {
+      try {
+        const { adminFetch } = await import('../js/utils.js');
+        await adminFetch(`/api/periodica/${encodeURIComponent(reg.ts)}`, { method: 'DELETE' });
+      } catch {} // servidor indisponível → segue para local
+    }
+    // 2. localStorage
+    try {
+      const arr = JSON.parse(localStorage.getItem(AnalisePeriodicaPage._HIST_KEY) ?? '[]');
+      const nova = arr.filter(e => e.ts !== reg.ts);
+      localStorage.setItem(AnalisePeriodicaPage._HIST_KEY, JSON.stringify(nova));
+    } catch {}
+    return true;
+  }
+
   _getHierarquia() {
     const custom = this._loadCustom();
     if (!custom.length) return HIERARQUIA;

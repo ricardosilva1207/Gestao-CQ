@@ -563,6 +563,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 print(f'  [OK] Solicitacao {sid.upper()} concluida{rel_info}')
 
             self._json_response(200, {'ok': True})
+
+        elif self.path.startswith('/api/periodica/'):
+            # Remove uma entrada de análise periódica por timestamp
+            if not self._admin_ok(): return
+            ts = self.path[len('/api/periodica/'):]
+            if not ts:
+                self._json_response(400, {'ok': False, 'erro': 'ts obrigatorio'}); return
+            try:
+                # decodifica se veio percent-encoded
+                import urllib.parse
+                ts = urllib.parse.unquote(ts)
+            except Exception:
+                pass
+            try:
+                hist = _load_periodica_hist()
+                antes = len(hist)
+                nova = [e for e in hist if e.get('ts') != ts]
+                if len(nova) == antes:
+                    self._json_response(404, {'ok': False, 'erro': 'nao encontrado'}); return
+                _save_periodica_hist(nova)
+                print(f'  [OK] Checagem periodica {ts} removida ({antes - len(nova)})')
+                self._json_response(200, {'ok': True, 'removidas': antes - len(nova)})
+            except Exception as e:
+                self._json_response(500, {'ok': False, 'erro': str(e)})
+
         else:
             self.send_response(404); self.end_headers()
 
