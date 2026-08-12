@@ -1918,8 +1918,7 @@ ${legendHtml}
       novosDiasSemana[String(day)] = diasNomes[new Date(novoAno, novoMes - 1, day).getDay()];
     }
 
-    const novosItens = this._gerarDiasProximoMes(novoAno, novoMes, novosDiasSemana, new Set());
-
+    // Constrói o cronograma novo primeiro (sem items) para usar como contexto
     const novoCronograma = {
       mes: novoMesLabel,
       ano: novoAno,
@@ -1929,9 +1928,44 @@ ${legendHtml}
         : this._getTurnosAtivosDefault(),
       diasSemExpediente: [],
       diasSemana: novosDiasSemana,
-      items: novosItens,
+      items: [],
       diario: [],
     };
+
+    // Copia os itens (peça, dimensional, freqPorTurno, freqMes, tempo) e
+    // deixa a distribuição inteligente cuidar dos dias/turnos no NOVO mês.
+    // Itens sem freqMes caem no fallback antigo (padrão do dia da semana).
+    const legadoParaFallback = [];
+    (this._data.items ?? []).forEach(it => {
+      const base = {
+        item: it.item,
+        peca: it.peca,
+        dimensional: it.dimensional,
+        freqPorTurno: it.freqPorTurno ?? '',
+        freqMes: it.freqMes ?? '',
+        tempo: it.tempo ?? '',
+        dias: {},
+      };
+      if (Number.isFinite(Number(it.freqMes)) && Number(it.freqMes) > 0) {
+        novoCronograma.items.push(base);
+      } else {
+        legadoParaFallback.push(it);
+      }
+    });
+
+    // Redistribui todos os itens novos com a lógica atual (espaçados por
+    // seção e alternando turnos, considerando colisão)
+    this._redistribuirTudo(novoCronograma);
+
+    // Itens legados sem freqMes: usa a rotina antiga para tentar preservar
+    // padrão de dia da semana. Vão no final da lista.
+    if (legadoParaFallback.length) {
+      const backup = this._data.items;
+      this._data.items = legadoParaFallback;
+      const legadoNovos = this._gerarDiasProximoMes(novoAno, novoMes, novosDiasSemana, new Set());
+      this._data.items = backup;
+      novoCronograma.items.push(...legadoNovos);
+    }
 
     const ok = await this._saveData(novoCronograma);
     if (ok) this._render();
