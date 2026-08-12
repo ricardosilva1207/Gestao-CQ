@@ -20,6 +20,7 @@ import { NormasPage }             from '../components/NormasPage.js';
 import { HinpyouPage }           from '../components/HinpyouPage.js';
 import { DesenhosPage }          from '../components/DesenhosPage.js';
 import { HistoricoPeriodicaPage } from '../components/HistoricoPeriodicaPage.js';
+import { PlaceholderPage }        from '../components/PlaceholderPage.js';
 import { initAnaliseExtraHistory } from './initAnaliseExtra.js';
 
 /* ==========================================================================
@@ -131,6 +132,8 @@ class App {
       navItems: [
         { id: 'analise-periodica', label: 'Análise Periódica',       icon: 'chart',    badge: 0, page: 'analise-periodica' },
         { id: 'analise-extra',     label: 'Análise Extra',           icon: 'plus',     badge: 0, page: 'analise-extra' },
+        { id: 'auditorias',        label: 'Auditorias',              icon: 'clipboard',badge: 0, page: 'auditorias' },
+        { id: 'sala-motor',        label: 'Sala do Motor',           icon: 'engine',   badge: 0, page: 'sala-motor' },
         { id: 'cronograma',        label: 'Cronograma de Atividade', icon: 'calendar', badge: 0,  page: 'cronograma'    },
         { id: 'normas',            label: 'Normas CQ',               icon: 'file',     badge: 0,  page: 'normas'        },
         { id: 'hinpyou',           label: 'Hinpyou',                 icon: 'bell',     badge: 0,  page: 'hinpyou'       },
@@ -193,6 +196,16 @@ class App {
     this._hinpyouPage       = new HinpyouPage(this._cfg, this._bus);
     this._desenhosPage      = new DesenhosPage(this._cfg, this._bus);
     this._histPeriodicaPage = new HistoricoPeriodicaPage(this._cfg, this._bus);
+
+    // Módulos placeholder (a serem especificados)
+    this._auditoriasPage = new PlaceholderPage({
+      id: 'auditorias', title: 'Auditorias', icon: '📋',
+      subtitle: 'Módulo em desenvolvimento.', bus: this._bus,
+    });
+    this._salaMotorPage = new PlaceholderPage({
+      id: 'sala-motor', title: 'Sala do Motor', icon: '⚙️',
+      subtitle: 'Módulo em desenvolvimento.', bus: this._bus,
+    });
   }
 
   /* ---------------------------------------------------------------------- */
@@ -773,6 +786,12 @@ class App {
     if (this._histPeriodicaPage?._page?.style.display !== 'none') {
       this._histPeriodicaPage.hide();
     }
+    if (this._auditoriasPage?._page?.style.display !== 'none') {
+      this._auditoriasPage.hide();
+    }
+    if (this._salaMotorPage?._page?.style.display !== 'none') {
+      this._salaMotorPage.hide();
+    }
 
     if (page === 'hist-periodica') {
       this._histPeriodicaPage?.show();
@@ -821,12 +840,26 @@ class App {
       return;
     }
 
+    if (page === 'auditorias') {
+      this._auditoriasPage?.show();
+      this._sidebar?.setActivePage('auditorias');
+      return;
+    }
+
+    if (page === 'sala-motor') {
+      this._salaMotorPage?.show();
+      this._sidebar?.setActivePage('sala-motor');
+      return;
+    }
+
     // Voltar ao dashboard principal
     this._cronogramaPage?.hide();
     this._normasPage?.hide();
     this._hinpyouPage?.hide();
     this._desenhosPage?.hide();
     this._histPeriodicaPage?.hide();
+    this._auditoriasPage?.hide();
+    this._salaMotorPage?.hide();
     document.getElementById('crono-page')?.style.setProperty('display', 'none');
     document.getElementById('content')?.style.setProperty('display', '');
     this._sidebar?.setActivePage('analise-periodica');
