@@ -2314,7 +2314,8 @@ ${legendHtml}
     const diasUteis = this._diasUteisDo({ diasSemana, diasSemExpediente: semExpediente });
     const escolhidos = this._pickEvenly(diasUteis, Math.min(n, diasUteis.length));
     const dias = {};
-    escolhidos.forEach(d => { dias[String(d)] = 4; });
+    // 0 = agendado (pendente/atrasado por data); 4 = realizado (definido só via modal)
+    escolhidos.forEach(d => { dias[String(d)] = 0; });
     return dias;
   }
 
@@ -2345,9 +2346,9 @@ ${legendHtml}
     if (freqMes >= diasUteis.length) {
       item.turnos = turnosAtivos.map(t => ({
         turno: t,
-        dias: Object.fromEntries(diasUteis.map(d => [String(d), 4]))
+        dias: Object.fromEntries(diasUteis.map(d => [String(d), 0]))
       }));
-      item.dias = Object.fromEntries(diasUteis.map(d => [String(d), 4]));
+      item.dias = Object.fromEntries(diasUteis.map(d => [String(d), 0]));
       return;
     }
 
@@ -2417,12 +2418,13 @@ ${legendHtml}
     }
 
     // Monta it.turnos e it.dias (união, para compatibilidade)
+    // 0 = agendado (vira pendente/atrasado); 4 = realizado (só quando marcado no modal)
     const byTurno = {};
     turnosAtivos.forEach(t => { byTurno[t] = {}; });
     const uniao = {};
     escolhidos.forEach(({ d, t }) => {
-      byTurno[t][String(d)] = 4;
-      uniao[String(d)] = 4;
+      byTurno[t][String(d)] = 0;
+      uniao[String(d)] = 0;
     });
     item.turnos = turnosAtivos.map(t => ({ turno: t, dias: byTurno[t] }));
     item.dias = uniao;
