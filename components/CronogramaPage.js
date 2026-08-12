@@ -2298,9 +2298,14 @@ ${legendHtml}
   }
 
   /**
-   * Distribui um item respeitando o "calor" dos outros — evita colisão
-   * dia+turno com atividades já agendadas e rotaciona turnos.
-   * Se freqMes for suficiente para cobrir todos os slots, marca todos.
+   * Distribui um item respeitando 3 regras:
+   *   1) execuções da mesma atividade ficam espalhadas (≈1 semana entre elas
+   *      quando possível — divide-se os dias úteis em freqMes seções);
+   *   2) o turno rotaciona ciclicamente entre as execuções — a atividade
+   *      não cai duas vezes no mesmo turno consecutivamente;
+   *   3) entre atividades diferentes, prefere-se o slot com menor "carga"
+   *      externa (menos concorrência).
+   * Se freqMes cobre ou excede os dias úteis, marca todos.
    */
   _distribuirItem(item, todosItens, cronograma) {
     const turnosAtivos = Array.isArray(cronograma.turnosAtivos) && cronograma.turnosAtivos.length
@@ -2315,9 +2320,7 @@ ${legendHtml}
       return;
     }
 
-    const totalSlots = diasUteis.length * turnosAtivos.length;
-
-    // Cobrir todos os dias úteis: freqMes >= total ou >= diasUteis.length
+    // Cobrir todos os dias úteis
     if (freqMes >= diasUteis.length) {
       item.turnos = turnosAtivos.map(t => ({
         turno: t,
@@ -2328,10 +2331,9 @@ ${legendHtml}
     }
 
     // Mapa de "carga" dos outros itens: quantas atividades já usam cada (dia, turno)
-    const load = new Map();
     const key = (d, t) => `${d}|${t}`;
+    const load = new Map();
     diasUteis.forEach(d => turnosAtivos.forEach(t => load.set(key(d, t), 0)));
-
     todosItens.forEach(it => {
       if (it === item) return;
       const itTurnos = it.turnos
@@ -2346,29 +2348,51 @@ ${legendHtml}
       });
     });
 
-    // Gera slots ordenados (dia crescente, turno round-robin) e picka N espaçados
-    const slots = [];
-    diasUteis.forEach((d, di) => {
-      turnosAtivos.forEach((t, ti) => slots.push({ d, t, order: di + ti / turnosAtivos.length }));
-    });
-
-    // Bucketiza em freqMes grupos; de cada bucket, escolhe o slot com menor carga
+    // Para cada execução i (0..freqMes-1):
+    //   - seção = pedaço i-ésimo dos dias úteis (garante espaçamento ≈semanal
+    //     quando freqMes ≤ ~4)
+    //   - turno alvo = rotaciona: turnosAtivos[i % len]
+    //   - escolhe o dia da seção com menor carga externa no turno alvo,
+    //     evitando repetir (dia, turno) que este próprio item já usou.
+    const secSize = diasUteis.length / freqMes;
     const escolhidos = [];
-    const bucketSize = slots.length / freqMes;
+    const usadosPeloItem = new Set(); // 'd|t'
+
     for (let i = 0; i < freqMes; i++) {
-      const start = Math.floor(i * bucketSize);
-      const end   = Math.min(Math.floor((i + 1) * bucketSize), slots.length);
-      const bucket = slots.slice(start, end);
-      if (!bucket.length) continue;
-      bucket.sort((a, b) => {
-        const la = load.get(key(a.d, a.t)) ?? 0;
-        const lb = load.get(key(b.d, b.t)) ?? 0;
+      const start = Math.floor(i * secSize);
+      const end   = Math.max(start + 1, Math.floor((i + 1) * secSize));
+      let secao = diasUteis.slice(start, end);
+      if (!secao.length) secao = [...diasUteis];
+
+      const turno = turnosAtivos[i % turnosAtivos.length];
+
+      // Filtra dias que já foram usados por este item nesse turno
+      let candidatos = secao.filter(d => !usadosPeloItem.has(key(d, turno)));
+
+      // Se todos os dias da seção já estão ocupados nesse turno pelo próprio
+      // item, tenta expandir para dias úteis fora da seção que ainda não foram
+      // usados nesse turno.
+      if (!candidatos.length) {
+        candidatos = diasUteis.filter(d => !usadosPeloItem.has(key(d, turno)));
+      }
+      if (!candidatos.length) candidatos = secao; // último recurso
+
+      // Ordena por menor carga externa; desempate pelo dia mais próximo do
+      // centro da seção (fica bem espaçado visualmente)
+      const centro = (start + end - 1) / 2;
+      candidatos.sort((a, b) => {
+        const la = load.get(key(a, turno)) ?? 0;
+        const lb = load.get(key(b, turno)) ?? 0;
         if (la !== lb) return la - lb;
-        return a.order - b.order;
+        const idxA = diasUteis.indexOf(a);
+        const idxB = diasUteis.indexOf(b);
+        return Math.abs(idxA - centro) - Math.abs(idxB - centro);
       });
-      const pick = bucket[0];
-      escolhidos.push(pick);
-      load.set(key(pick.d, pick.t), (load.get(key(pick.d, pick.t)) ?? 0) + 1);
+
+      const pickDia = candidatos[0];
+      escolhidos.push({ d: pickDia, t: turno });
+      usadosPeloItem.add(key(pickDia, turno));
+      load.set(key(pickDia, turno), (load.get(key(pickDia, turno)) ?? 0) + 1);
     }
 
     // Monta it.turnos e it.dias (união, para compatibilidade)
