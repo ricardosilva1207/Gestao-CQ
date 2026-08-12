@@ -45,7 +45,8 @@ export class PlaceholderPage {
           padding: 48px 32px; border-radius: 14px;
           background: var(--surface,#111c2e); border: 1px solid var(--border);
         }
-        .ph-icon { font-size: 56px; line-height: 1; margin-bottom: 18px; }
+        .ph-icon { font-size: 56px; line-height: 1; margin-bottom: 18px; display: flex; justify-content: center; align-items: center; color: var(--accent, #4ea3ff); }
+        .ph-icon svg { width: 84px; height: 84px; }
         .ph-title-lg { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
         .ph-sub { font-size: 13px; color: var(--text-mute); line-height: 1.5; }
       </style>

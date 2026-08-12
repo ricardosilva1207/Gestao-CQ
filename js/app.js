@@ -203,8 +203,11 @@ class App {
       subtitle: 'Módulo em desenvolvimento.', bus: this._bus,
     });
     this._salaMotorPage = new PlaceholderPage({
-      id: 'sala-motor', title: 'Sala do Motor', icon: '⚙️',
-      subtitle: 'Módulo em desenvolvimento.', bus: this._bus,
+      id: 'sala-motor',
+      title: 'Sala do Motor',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5 L3.5 6 L4.5 9.5 L8 10.5 L10.5 8 L9.5 4.5 Z"/><line x1="9" y1="9" x2="15" y2="15"/><path d="M17 21.5 L20.5 18 L19.5 14.5 L16 13.5 L13.5 16 L14.5 19.5 Z"/></svg>`,
+      subtitle: 'Módulo em desenvolvimento.',
+      bus: this._bus,
     });
   }
 
