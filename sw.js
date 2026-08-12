@@ -8,7 +8,7 @@
  *
  * Bump CACHE_VERSION para forçar atualização dos clientes.
  */
-const CACHE_VERSION = 'metrologia-v8';
+const CACHE_VERSION = 'metrologia-v9';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const DATA_CACHE    = `${CACHE_VERSION}-data`;
 
@@ -43,6 +43,7 @@ const SHELL_ASSETS = [
   './components/HinpyouPage.js',
   './components/DesenhosPage.js',
   './components/HistoricoPeriodicaPage.js',
+  './components/PlaceholderPage.js',
   './toyota-logo.png.png',
 ];
 
