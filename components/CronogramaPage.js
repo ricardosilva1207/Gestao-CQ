@@ -466,23 +466,27 @@ export class CronogramaPage {
         font-size:11px; color:var(--text-mute);
         margin-bottom:18px; padding-left:22px;
       }
-      /* Toggle Realizada / Não Realizada */
+      /* Toggle Realizada / Não Realizada / Justificada */
       .crono-status-toggle {
-        display:grid; grid-template-columns:1fr 1fr;
-        gap:8px; margin-bottom:18px;
+        display:grid; grid-template-columns:1fr 1fr 1fr;
+        gap:6px; margin-bottom:18px;
       }
       .crono-status-btn {
-        padding:10px 8px; border-radius:8px; font-size:12px; font-weight:700;
+        padding:10px 6px; border-radius:8px; font-size:11px; font-weight:700;
         border:2px solid var(--border); background:var(--panel-2);
         color:var(--text-dim); cursor:pointer; transition:all .15s;
-        display:flex; align-items:center; justify-content:center; gap:6px;
+        display:flex; align-items:center; justify-content:center; gap:5px;
+        text-align:center; line-height:1.15;
       }
       .crono-status-btn:hover { border-color:var(--text-dim); color:var(--text); }
       .crono-status-btn--ok.active {
         border-color:#22c55e; background:rgba(34,197,94,.12); color:#22c55e;
       }
       .crono-status-btn--nok.active {
-        border-color:#f97316; background:rgba(249,115,22,.12); color:#f97316;
+        border-color:#ef4444; background:rgba(239,68,68,.12); color:#ef4444;
+      }
+      .crono-status-btn--just.active {
+        border-color:#3b82f6; background:rgba(59,130,246,.12); color:#3b82f6;
       }
       /* Campos de justificativa dentro do modal de atividade */
       .crono-act-just {
@@ -1132,7 +1136,12 @@ export class CronogramaPage {
     });
 
     // Estado inicial do toggle
-    let selectedStatus = cls === 'ok' ? 'ok' : (cls === 'nok' || isJust ? 'nok' : null);
+    // - ok:   Realizada
+    // - just: Não realizada com justificativa formal (azul)
+    // - nok:  Não realizada sem justificativa (atrasada, vermelha)
+    let selectedStatus = cls === 'ok'
+      ? 'ok'
+      : (isJust ? 'just' : (cls === 'nok' ? 'nok' : null));
 
     const overlay = document.createElement('div');
     overlay.className = 'crono-act-overlay';
@@ -1155,9 +1164,13 @@ export class CronogramaPage {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Não Realizada
         </button>
+        <button class="crono-status-btn crono-status-btn--just${selectedStatus==='just'?' active':''}" id="btnJust">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Justificada
+        </button>
       </div>
 
-      <div class="crono-act-just" id="justFields" style="${selectedStatus==='nok'?'':'display:none'}">
+      <div class="crono-act-just" id="justFields" style="${selectedStatus==='just'?'':'display:none'}">
         <div class="crono-act-just-label">Justificativa</div>
         <div class="crono-j-field">
           <label>Motivo / Descrição da Ocorrência</label>
@@ -1178,20 +1191,23 @@ export class CronogramaPage {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    const btnOk  = box.querySelector('#btnOk');
-    const btnNok = box.querySelector('#btnNok');
+    const btnOk   = box.querySelector('#btnOk');
+    const btnNok  = box.querySelector('#btnNok');
+    const btnJust = box.querySelector('#btnJust');
     const justFields = box.querySelector('#justFields');
 
     const setStatus = (s) => {
       selectedStatus = s;
-      btnOk.classList.toggle('active',  s === 'ok');
-      btnNok.classList.toggle('active', s === 'nok');
-      justFields.style.display = s === 'nok' ? '' : 'none';
-      if (s === 'nok') box.querySelector('#aDesc')?.focus();
+      btnOk.classList.toggle('active',   s === 'ok');
+      btnNok.classList.toggle('active',  s === 'nok');
+      btnJust.classList.toggle('active', s === 'just');
+      justFields.style.display = s === 'just' ? '' : 'none';
+      if (s === 'just') box.querySelector('#aDesc')?.focus();
     };
 
-    btnOk.addEventListener('click',  () => setStatus('ok'));
-    btnNok.addEventListener('click', () => setStatus('nok'));
+    btnOk.addEventListener('click',   () => setStatus('ok'));
+    btnNok.addEventListener('click',  () => setStatus('nok'));
+    btnJust.addEventListener('click', () => setStatus('just'));
 
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     box.querySelector('#aCancel').addEventListener('click', () => overlay.remove());
@@ -1214,29 +1230,34 @@ export class CronogramaPage {
         const tObj = itData.turnos
           ? itData.turnos.find(t => t.turno === turnoObj.turno) ?? itData.turnos[0]
           : itData;
+        const removeExisting = () => {
+          if (!existing) return;
+          const idx = this._data.diario.indexOf(existing);
+          if (idx >= 0) this._data.diario.splice(idx, 1);
+        };
+
         if (selectedStatus === 'ok') {
-          // Marca como realizada
+          // Marca como realizada e remove justificativa se houver
           tObj.dias = tObj.dias ?? {};
           tObj.dias[String(day)] = 4;
-          // Remove justificativa se existir
-          if (existing) {
-            const idx = this._data.diario.indexOf(existing);
-            if (idx >= 0) this._data.diario.splice(idx, 1);
-          }
-        } else {
-          // Não realizada: garante que o dia não está marcado como 4
-          if (tObj.dias?.[String(day)] === 4) {
-            tObj.dias[String(day)] = 0;
-          }
-          // Salva justificativa
+          removeExisting();
+        } else if (selectedStatus === 'nok') {
+          // Não realizada pura (atrasada / vermelha) — sem justificativa
+          if (tObj.dias?.[String(day)] === 4) tObj.dias[String(day)] = 0;
+          removeExisting();
+        } else if (selectedStatus === 'just') {
+          // Justificada (azul) — grava/atualiza entrada no diário
+          if (tObj.dias?.[String(day)] === 4) tObj.dias[String(day)] = 0;
           const desc = box.querySelector('#aDesc')?.value.trim() ?? '';
           const med  = box.querySelector('#aMed')?.value.trim() ?? '';
+          if (!desc) { alert('Descreva o motivo da justificativa.'); return; }
           this._data.diario = this._data.diario ?? [];
           if (existing) {
             existing.descricao    = desc;
             existing.contramedida = med;
             existing._justified   = true;
-          } else if (desc) {
+            existing.data         = dateStr;
+          } else {
             this._data.diario.push({ data: dateStr, item: String(item.item), descricao: desc, contramedida: med, _justified: true });
           }
         }
