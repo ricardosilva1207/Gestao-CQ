@@ -1,0 +1,13 @@
+# Dependências
+node_modules/
+
+# Banco de dados e uploads gerados em runtime (cada PC tem o seu)
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
+server/data/uploads/*
+!server/data/uploads/.gitkeep
+
+# Logs e temporários
+*.log
+.DS_Store

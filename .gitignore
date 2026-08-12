@@ -2,10 +2,20 @@
 __pycache__/
 *.pyc
 
-# Node / test tooling
+# Node / test tooling (raiz — nao existe no projeto principal;
+# auditoria/ tem seu proprio package.json que DEVE ser versionado)
 node_modules/
-package.json
-package-lock.json
+/package.json
+/package-lock.json
+
+# Auditoria (TOYINPS): runtime local, nao versionar
+auditoria/node_modules/
+auditoria/python-embed/
+auditoria/server/data/*.db
+auditoria/server/data/*.db-wal
+auditoria/server/data/*.db-shm
+auditoria/server/data/uploads/*
+!auditoria/server/data/uploads/.gitkeep
 
 # Runtime data gerada pelo servidor (nao versionar)
 data/.admin_token

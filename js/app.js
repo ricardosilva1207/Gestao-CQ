@@ -198,10 +198,6 @@ class App {
     this._histPeriodicaPage = new HistoricoPeriodicaPage(this._cfg, this._bus);
 
     // Módulos placeholder (a serem especificados)
-    this._auditoriasPage = new PlaceholderPage({
-      id: 'auditorias', title: 'Auditorias', icon: '📋',
-      subtitle: 'Módulo em desenvolvimento.', bus: this._bus,
-    });
     this._salaMotorPage = new PlaceholderPage({
       id: 'sala-motor',
       title: 'Sala do Motor',
@@ -789,9 +785,6 @@ class App {
     if (this._histPeriodicaPage?._page?.style.display !== 'none') {
       this._histPeriodicaPage.hide();
     }
-    if (this._auditoriasPage?._page?.style.display !== 'none') {
-      this._auditoriasPage.hide();
-    }
     if (this._salaMotorPage?._page?.style.display !== 'none') {
       this._salaMotorPage.hide();
     }
@@ -844,8 +837,15 @@ class App {
     }
 
     if (page === 'auditorias') {
-      this._auditoriasPage?.show();
-      this._sidebar?.setActivePage('auditorias');
+      // Abre o TOYINPS Auditoria (servidor secundario, porta 3001) em nova aba.
+      // Usa o mesmo host desta pagina, so troca a porta.
+      const host = window.location.hostname || 'localhost';
+      const url  = `http://${host}:3001/`;
+      const win  = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        alert('Nao foi possivel abrir a Auditoria em nova aba (pop-up bloqueado).\n\nAcesse manualmente: ' + url);
+      }
+      // Nao muda a pagina ativa — permanece no dashboard atual
       return;
     }
 
@@ -861,7 +861,6 @@ class App {
     this._hinpyouPage?.hide();
     this._desenhosPage?.hide();
     this._histPeriodicaPage?.hide();
-    this._auditoriasPage?.hide();
     this._salaMotorPage?.hide();
     document.getElementById('crono-page')?.style.setProperty('display', 'none');
     document.getElementById('content')?.style.setProperty('display', '');
