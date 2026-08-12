@@ -408,6 +408,29 @@ export class CronogramaPage {
       }
       .crono-atv-chip.selected strong::before { content: '✓ '; color: var(--ok, #22c55e); }
 
+      /* Barra de ações do editor */
+      .crono-edit-actions { display: flex; gap: 6px; margin-bottom: 8px; }
+      .crono-edit-action-btn {
+        flex: 1; padding: 8px 10px;
+        background: var(--panel-2); border: 1px solid var(--accent);
+        color: var(--accent); border-radius: 8px;
+        font-size: 11px; font-weight: 700; cursor: pointer;
+        transition: all .15s;
+      }
+      .crono-edit-action-btn:hover { background: var(--accent); color: #fff; }
+
+      /* Ações do item (todos + remover) */
+      .crono-edit-item__actions { display: flex; align-items: center; gap: 4px; padding-top: 6px; }
+      .crono-edit-item__all {
+        padding: 4px 8px; border-radius: 6px;
+        border: 1px solid var(--border); background: none;
+        color: var(--text-mute); font-size: 10px; font-weight: 700;
+        cursor: pointer; white-space: nowrap; transition: all .15s;
+      }
+      .crono-edit-item__all:hover {
+        border-color: var(--accent); color: var(--accent); background: rgba(78,163,255,.08);
+      }
+
       /* ── Célula Justificada (azul) ── */
       .crono-cell--just {
         background:#1d4ed8; color:#fff; font-weight:700; border-radius:3px;
@@ -577,6 +600,18 @@ export class CronogramaPage {
       /* ── Dias sem expediente ── */
       .crono-thead--sem-exp { background:#431407 !important; color:#fb923c !important; }
       .crono-td--sem-exp { background:rgba(251,146,60,.07) !important; }
+      /* Sábado e Domingo — destaque distinto do 'sem expediente' */
+      .crono-thead--weekend {
+        background: linear-gradient(180deg, rgba(148,163,184,.18), rgba(148,163,184,.08)) !important;
+        color: #cbd5e1 !important;
+        border-left: 1px solid rgba(148,163,184,.35);
+        border-right: 1px solid rgba(148,163,184,.35);
+      }
+      .crono-td--weekend {
+        background: rgba(148,163,184,.06);
+        border-left: 1px solid rgba(148,163,184,.18);
+        border-right: 1px solid rgba(148,163,184,.18);
+      }
 
       /* Botões S/ Expediente e Próximo Mês */
       .crono-btn--semexp { color:#f97316; border-color:#f97316; }
@@ -813,10 +848,16 @@ export class CronogramaPage {
       if (lbl === 'T') { th.style.width = '20px'; th.style.minWidth = '20px'; th.style.padding = '3px 2px'; }
       trH1.appendChild(th);
     });
+    const weekendSet = new Set(); // dias que caem em sáb/dom
+    Object.entries(d.diasSemana ?? {}).forEach(([day, nome]) => {
+      if (nome === 'sáb' || nome === 'dom') weekendSet.add(Number(day));
+    });
+
     diasNum.forEach(day => {
       const th = document.createElement('th');
       th.textContent = String(day).padStart(2,'0');
       th.className = 'crono-thead--day';
+      if (weekendSet.has(day))       th.className += ' crono-thead--weekend';
       if (semExpedienteSet.has(day)) th.className += ' crono-thead--sem-exp';
       if (isCurrentMonth && day === now.getDate()) th.style.color = 'var(--accent)';
       trH1.appendChild(th);
@@ -828,6 +869,7 @@ export class CronogramaPage {
       const th = document.createElement('th');
       th.textContent = (d.diasSemana?.[String(day)] ?? '').substring(0,3);
       th.className = 'crono-thead--day crono-thead--ds';
+      if (weekendSet.has(day)) th.className += ' crono-thead--weekend';
       trH2.appendChild(th);
     });
     thead.appendChild(trH2);
@@ -899,6 +941,7 @@ export class CronogramaPage {
           let tdCls = 'crono-td--day';
           if (isGrayCell) tdCls += ' crono-td--day--gray';
           if (isSemExp)   tdCls += ' crono-td--sem-exp';
+          if (weekendSet.has(day)) tdCls += ' crono-td--weekend';
           if (cls === 'nok' && !isJust) tdCls += ' crono-td--day--nok';
           td.className = tdCls;
 
@@ -2022,17 +2065,17 @@ ${legendHtml}
       chip.addEventListener('click', () => {
         if (usado) return;
         const nextNum = (d.items.length ? Math.max(...d.items.map(i=>i.item)) : 0) + 1;
-        const freqMes = 4;
-        const dias = this._gerarDiasParaFreq(freqMes, d.diasSemana, d.diasSemExpediente ?? []);
-        d.items.push({
+        const novo = {
           item: nextNum,
           peca: contexto,
           dimensional: atividade,
           freqPorTurno: 1,
-          freqMes,
+          freqMes: 4,
           tempo: '',
-          dias,
-        });
+          dias: {},
+        };
+        d.items.push(novo);
+        this._distribuirItem(novo, d.items, d);
         this._rebuildEditBody(body);
       });
       dispGrid.appendChild(chip);
@@ -2046,6 +2089,25 @@ ${legendHtml}
     secLbl.style.cssText = 'margin-top:10px;';
     secLbl.textContent = 'Selecionadas';
     body.appendChild(secLbl);
+
+    // Barra de ações rápidas (redistribuir tudo)
+    if ((d.items ?? []).length > 0) {
+      const actionsBar = document.createElement('div');
+      actionsBar.className = 'crono-edit-actions';
+
+      const redistribuirBtn = document.createElement('button');
+      redistribuirBtn.type = 'button';
+      redistribuirBtn.className = 'crono-edit-action-btn';
+      redistribuirBtn.innerHTML = '🔄 Redistribuir todas (espaçar e alternar turnos)';
+      redistribuirBtn.title = 'Recalcula os dias de todas as atividades, evitando colisões';
+      redistribuirBtn.addEventListener('click', () => {
+        this._redistribuirTudo(d);
+        this._rebuildEditBody(body);
+      });
+      actionsBar.appendChild(redistribuirBtn);
+
+      body.appendChild(actionsBar);
+    }
 
     // Botão adicionar grupo/peça (avulso)
     const addGroupBtn = document.createElement('button');
@@ -2128,16 +2190,31 @@ ${legendHtml}
             const raw = inp.value;
             it[fd.key] = fd.type === 'number' ? (raw === '' ? '' : Number(raw)) : raw;
             if (fd.recomputeDias) {
-              const n = Number(raw);
-              it.dias = Number.isFinite(n) && n > 0
-                ? this._gerarDiasParaFreq(n, d.diasSemana, d.diasSemExpediente ?? [])
-                : {};
+              this._distribuirItem(it, d.items, d);
             }
           });
           fWrap.appendChild(lbl); fWrap.appendChild(inp);
           fields.appendChild(fWrap);
         });
         row.appendChild(fields);
+
+        // Ações do item: "todos os dias úteis" + remover
+        const rowActions = document.createElement('div');
+        rowActions.className = 'crono-edit-item__actions';
+
+        const allDaysBtn = document.createElement('button');
+        allDaysBtn.type = 'button';
+        allDaysBtn.className = 'crono-edit-item__all';
+        allDaysBtn.title = 'Programar em todos os dias úteis';
+        allDaysBtn.innerHTML = '📅 Todos';
+        allDaysBtn.addEventListener('click', () => {
+          const diasUteis = this._diasUteisDo(d);
+          it.freqMes = diasUteis.length;
+          it.freqPorTurno = it.freqPorTurno || 1;
+          this._distribuirItem(it, d.items, d);
+          this._rebuildEditBody(body);
+        });
+        rowActions.appendChild(allDaysBtn);
 
         const delBtn = document.createElement('button');
         delBtn.className = 'crono-edit-item__del';
@@ -2147,7 +2224,9 @@ ${legendHtml}
           d.items = d.items.filter(i => i !== it);
           this._rebuildEditBody(body);
         });
-        row.appendChild(delBtn);
+        rowActions.appendChild(delBtn);
+
+        row.appendChild(rowActions);
         grp.appendChild(row);
       });
 
@@ -2198,18 +2277,119 @@ ${legendHtml}
     return out;
   }
 
-  _gerarDiasParaFreq(freqMes, diasSemana, semExpediente = []) {
-    const n = Number(freqMes);
-    if (!Number.isFinite(n) || n <= 0) return {};
-    const semExpSet = new Set((semExpediente ?? []).map(Number));
+  _diasUteisDo(cronograma) {
+    const semExpSet = new Set((cronograma.diasSemExpediente ?? []).map(Number));
     const workDayNomes = new Set(['seg', 'ter', 'qua', 'qui', 'sex']);
-    const diasUteis = Object.entries(diasSemana ?? {})
+    return Object.entries(cronograma.diasSemana ?? {})
       .filter(([day, nome]) => workDayNomes.has(nome) && !semExpSet.has(Number(day)))
       .map(([day]) => Number(day))
       .sort((a, b) => a - b);
+  }
+
+  /* Legado: distribuição simples usada quando não há necessidade de considerar colisão. */
+  _gerarDiasParaFreq(freqMes, diasSemana, semExpediente = []) {
+    const n = Number(freqMes);
+    if (!Number.isFinite(n) || n <= 0) return {};
+    const diasUteis = this._diasUteisDo({ diasSemana, diasSemExpediente: semExpediente });
     const escolhidos = this._pickEvenly(diasUteis, Math.min(n, diasUteis.length));
     const dias = {};
     escolhidos.forEach(d => { dias[String(d)] = 4; });
     return dias;
+  }
+
+  /**
+   * Distribui um item respeitando o "calor" dos outros — evita colisão
+   * dia+turno com atividades já agendadas e rotaciona turnos.
+   * Se freqMes for suficiente para cobrir todos os slots, marca todos.
+   */
+  _distribuirItem(item, todosItens, cronograma) {
+    const turnosAtivos = Array.isArray(cronograma.turnosAtivos) && cronograma.turnosAtivos.length
+      ? [...cronograma.turnosAtivos].sort() : [1];
+    const diasUteis = this._diasUteisDo(cronograma);
+    const freqMes   = Number(item.freqMes);
+
+    // Sem freqMes -> zera
+    if (!Number.isFinite(freqMes) || freqMes <= 0) {
+      item.turnos = turnosAtivos.map(t => ({ turno: t, dias: {} }));
+      item.dias = {};
+      return;
+    }
+
+    const totalSlots = diasUteis.length * turnosAtivos.length;
+
+    // Cobrir todos os dias úteis: freqMes >= total ou >= diasUteis.length
+    if (freqMes >= diasUteis.length) {
+      item.turnos = turnosAtivos.map(t => ({
+        turno: t,
+        dias: Object.fromEntries(diasUteis.map(d => [String(d), 4]))
+      }));
+      item.dias = Object.fromEntries(diasUteis.map(d => [String(d), 4]));
+      return;
+    }
+
+    // Mapa de "carga" dos outros itens: quantas atividades já usam cada (dia, turno)
+    const load = new Map();
+    const key = (d, t) => `${d}|${t}`;
+    diasUteis.forEach(d => turnosAtivos.forEach(t => load.set(key(d, t), 0)));
+
+    todosItens.forEach(it => {
+      if (it === item) return;
+      const itTurnos = it.turnos
+        ?? turnosAtivos.map(t => ({ turno: t, dias: it.dias ?? {} }));
+      itTurnos.forEach(tobj => {
+        const t = Number(tobj.turno);
+        if (!turnosAtivos.includes(t)) return;
+        Object.keys(tobj.dias ?? {}).forEach(d => {
+          const k = key(Number(d), t);
+          if (load.has(k)) load.set(k, load.get(k) + 1);
+        });
+      });
+    });
+
+    // Gera slots ordenados (dia crescente, turno round-robin) e picka N espaçados
+    const slots = [];
+    diasUteis.forEach((d, di) => {
+      turnosAtivos.forEach((t, ti) => slots.push({ d, t, order: di + ti / turnosAtivos.length }));
+    });
+
+    // Bucketiza em freqMes grupos; de cada bucket, escolhe o slot com menor carga
+    const escolhidos = [];
+    const bucketSize = slots.length / freqMes;
+    for (let i = 0; i < freqMes; i++) {
+      const start = Math.floor(i * bucketSize);
+      const end   = Math.min(Math.floor((i + 1) * bucketSize), slots.length);
+      const bucket = slots.slice(start, end);
+      if (!bucket.length) continue;
+      bucket.sort((a, b) => {
+        const la = load.get(key(a.d, a.t)) ?? 0;
+        const lb = load.get(key(b.d, b.t)) ?? 0;
+        if (la !== lb) return la - lb;
+        return a.order - b.order;
+      });
+      const pick = bucket[0];
+      escolhidos.push(pick);
+      load.set(key(pick.d, pick.t), (load.get(key(pick.d, pick.t)) ?? 0) + 1);
+    }
+
+    // Monta it.turnos e it.dias (união, para compatibilidade)
+    const byTurno = {};
+    turnosAtivos.forEach(t => { byTurno[t] = {}; });
+    const uniao = {};
+    escolhidos.forEach(({ d, t }) => {
+      byTurno[t][String(d)] = 4;
+      uniao[String(d)] = 4;
+    });
+    item.turnos = turnosAtivos.map(t => ({ turno: t, dias: byTurno[t] }));
+    item.dias = uniao;
+  }
+
+  /** Roda a distribuição para todos os itens em ordem, respeitando colisão. */
+  _redistribuirTudo(cronograma) {
+    (cronograma.items ?? []).forEach(it => {
+      // Se não tem freqMes, mantém intacto (peças avulsas com dias digitados à mão)
+      if (Number.isFinite(Number(it.freqMes)) && Number(it.freqMes) > 0) {
+        this._distribuirItem(it, cronograma.items, cronograma);
+      }
+    });
   }
 }
