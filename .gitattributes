@@ -1,0 +1,5 @@
+# Arquivos batch/PowerShell do Windows precisam de quebras CRLF
+# senão o cmd.exe interpreta o arquivo inteiro como uma linha só.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
