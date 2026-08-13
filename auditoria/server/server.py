@@ -5,7 +5,7 @@ import base64, hashlib, json, mimetypes, os, re, secrets, sqlite3, struct, threa
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qs
 
 # ── Caminhos ──────────────────────────────────────────────────────────────────
 BASE_DIR    = Path(__file__).parent
@@ -161,6 +161,52 @@ class Handler(BaseHTTPRequestHandler):
         n = int(self.headers.get('Content-Length', 0))
         return json.loads(self.rfile.read(n) or b'{}')
 
+    # ── Rotas publicas (CORS aberto) ─────────────────────────────────────────
+    def _get_limit(self, default=20, cap=100):
+        try:
+            q = parse_qs(urlparse(self.path).query)
+            v = int(q.get('limit', [default])[0])
+            return max(1, min(v, cap))
+        except Exception:
+            return default
+
+    def _public_preflight(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Max-Age', '86400')
+        self.end_headers()
+
+    def _public_list(self, table, limit):
+        result = []
+        try:
+            for r in qall(f'SELECT id, data, createdAt FROM {table} ORDER BY createdAt DESC LIMIT ?', (limit,)):
+                try:
+                    entry = json.loads(r['data'] or '{}')
+                    if not isinstance(entry, dict): entry = {}
+                except Exception:
+                    entry = {}
+                entry.setdefault('id', r['id'])
+                entry.setdefault('createdAt', r['createdAt'])
+                result.append(entry)
+        except Exception as e:
+            body = json.dumps({'ok': False, 'erro': str(e)}).encode()
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(body))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(body); return
+        body = json.dumps(result).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(body))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        self.wfile.write(body)
+
     # ── roteamento ────────────────────────────────────────────────────────────
     def route(self, method):
         path  = urlparse(self.path).path.rstrip('/') or '/'
@@ -176,6 +222,16 @@ class Handler(BaseHTTPRequestHandler):
         if method == 'POST' and path == '/api/config':          return self._config_post()
         if method == 'POST' and path == '/api/users/sync':      return self._users_sync()
         if method == 'POST' and path == '/api/save-pdf':        return self._save_pdf()
+
+        # ── Rotas publicas (somente leitura, com CORS aberto) ────────
+        # Usadas pelo dashboard 'Gerenciamento de Atividade CQ' na porta 8080
+        # para mostrar resumo de auditorias/defeitos.
+        if method == 'OPTIONS' and path.startswith('/api/public/'):
+            return self._public_preflight()
+        if method == 'GET' and path == '/api/public/auditorias':
+            return self._public_list('audits', self._get_limit())
+        if method == 'GET' and path == '/api/public/defeitos':
+            return self._public_list('defects', self._get_limit())
 
         if len(parts) >= 4 and parts[1] == 'api' and parts[2] in ('item-img', 'user-photo'):
             kind   = parts[2]
@@ -206,10 +262,11 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_response(404); self.end_headers()
 
-    def do_GET(self):    self.route('GET')
-    def do_POST(self):   self.route('POST')
-    def do_PUT(self):    self.route('PUT')
-    def do_DELETE(self): self.route('DELETE')
+    def do_GET(self):     self.route('GET')
+    def do_POST(self):    self.route('POST')
+    def do_PUT(self):     self.route('PUT')
+    def do_DELETE(self):  self.route('DELETE')
+    def do_OPTIONS(self): self.route('OPTIONS')
 
     # ── WebSocket ─────────────────────────────────────────────────────────────
     def _ws_upgrade(self):

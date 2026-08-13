@@ -21,6 +21,7 @@ import { HinpyouPage }           from '../components/HinpyouPage.js';
 import { DesenhosPage }          from '../components/DesenhosPage.js';
 import { HistoricoPeriodicaPage } from '../components/HistoricoPeriodicaPage.js';
 import { PlaceholderPage }        from '../components/PlaceholderPage.js';
+import { AuditoriasPage }         from '../components/AuditoriasPage.js';
 import { initAnaliseExtraHistory } from './initAnaliseExtra.js';
 
 /* ==========================================================================
@@ -196,6 +197,9 @@ class App {
     this._hinpyouPage       = new HinpyouPage(this._cfg, this._bus);
     this._desenhosPage      = new DesenhosPage(this._cfg, this._bus);
     this._histPeriodicaPage = new HistoricoPeriodicaPage(this._cfg, this._bus);
+
+    // Auditorias (TOYINPS): dashboard resumido dentro do painel + link pra app externo
+    this._auditoriasPage = new AuditoriasPage(this._cfg, this._bus);
 
     // Módulos placeholder (a serem especificados)
     this._salaMotorPage = new PlaceholderPage({
@@ -788,6 +792,9 @@ class App {
     if (this._salaMotorPage?._page?.style.display !== 'none') {
       this._salaMotorPage.hide();
     }
+    if (this._auditoriasPage?._page?.style.display !== 'none') {
+      this._auditoriasPage.hide();
+    }
 
     if (page === 'hist-periodica') {
       this._histPeriodicaPage?.show();
@@ -837,15 +844,8 @@ class App {
     }
 
     if (page === 'auditorias') {
-      // Abre o TOYINPS Auditoria (servidor secundario, porta 3001) em nova aba.
-      // Usa o mesmo host desta pagina, so troca a porta.
-      const host = window.location.hostname || 'localhost';
-      const url  = `http://${host}:3001/`;
-      const win  = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        alert('Nao foi possivel abrir a Auditoria em nova aba (pop-up bloqueado).\n\nAcesse manualmente: ' + url);
-      }
-      // Nao muda a pagina ativa — permanece no dashboard atual
+      this._auditoriasPage?.show();
+      this._sidebar?.setActivePage('auditorias');
       return;
     }
 
@@ -862,6 +862,7 @@ class App {
     this._desenhosPage?.hide();
     this._histPeriodicaPage?.hide();
     this._salaMotorPage?.hide();
+    this._auditoriasPage?.hide();
     document.getElementById('crono-page')?.style.setProperty('display', 'none');
     document.getElementById('content')?.style.setProperty('display', '');
     this._sidebar?.setActivePage('analise-periodica');
