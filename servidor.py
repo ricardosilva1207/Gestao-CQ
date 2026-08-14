@@ -48,6 +48,7 @@ HIST  = DATA / 'solicitacoes_hist.json'        # concluidas
 EMAIL_CFG    = DATA / 'config-email.json'
 TOKEN_FILE   = DATA / '.admin_token'
 PERIODICA_HIST = DATA / 'periodica_hist.json'  # histórico análises periódicas
+TROUBLE_FILE   = DATA / 'troubleshooting.json' # registros de Não Conformidades
 PORT  = 8080
 
 # ── SEGURANCA ──────────────────────────────────────────────
@@ -137,6 +138,15 @@ def _load_periodica_hist():
 
 def _save_periodica_hist(lst):
     PERIODICA_HIST.write_text(json.dumps(lst, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+# Troubleshooting — Registro de Nao Conformidades
+def _load_trouble():
+    try:   return json.loads(TROUBLE_FILE.read_text(encoding='utf-8'))
+    except Exception: return []
+
+def _save_trouble(lst):
+    TROUBLE_FILE.write_text(json.dumps(lst, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
 # E-mail
@@ -392,6 +402,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/periodica':
             self._json_response(200, _load_periodica_hist())
 
+        elif self.path == '/api/troubleshooting':
+            self._json_response(200, _load_trouble())
+
         else:
             # Remove If-Modified-Since para evitar 304 (cache) em JS/CSS/HTML
             if self.path.endswith(('.js', '.css', '.html')):
@@ -441,6 +454,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 hist.append(entry)
                 _save_periodica_hist(hist)
                 self._json_response(200, {'ok': True})
+            except Exception as e:
+                self._json_response(400, {'ok': False, 'erro': str(e)})
+
+        elif self.path == '/api/troubleshooting':
+            # Cria novo registro de Nao Conformidade
+            body = self._read_body()
+            if body is None: return
+            try:
+                entry = json.loads(body)
+                if not isinstance(entry, dict):
+                    self._json_response(400, {'ok': False, 'erro': 'payload invalido'}); return
+                entry['id']    = str(uuid.uuid4())[:12]
+                entry['ts']    = datetime.now().isoformat()
+                entry.setdefault('status', 'aberta')
+                lst = _load_trouble(); lst.append(entry); _save_trouble(lst)
+                print(f'  [NOVO] Troubleshooting {entry["id"]}: {entry.get("descricao","")[:50]}')
+                self._json_response(201, {'ok': True, 'id': entry['id'], 'entry': entry})
             except Exception as e:
                 self._json_response(400, {'ok': False, 'erro': str(e)})
 
@@ -588,6 +618,55 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self._json_response(500, {'ok': False, 'erro': str(e)})
 
+        elif self.path.startswith('/api/troubleshooting/'):
+            # Remove um registro de Troubleshooting por id
+            tid = self.path[len('/api/troubleshooting/'):]
+            if not tid:
+                self._json_response(400, {'ok': False, 'erro': 'id obrigatorio'}); return
+            try:
+                lst = _load_trouble()
+                antes = len(lst)
+                nova = [e for e in lst if e.get('id') != tid]
+                if len(nova) == antes:
+                    self._json_response(404, {'ok': False, 'erro': 'nao encontrado'}); return
+                _save_trouble(nova)
+                print(f'  [OK] Troubleshooting {tid} removido')
+                self._json_response(200, {'ok': True})
+            except Exception as e:
+                self._json_response(500, {'ok': False, 'erro': str(e)})
+
+        else:
+            self.send_response(404); self.end_headers()
+
+    # PUT — usado para editar Troubleshooting
+    def do_PUT(self):
+        if not self._origin_ok(): return
+
+        if self.path.startswith('/api/troubleshooting/'):
+            tid = self.path[len('/api/troubleshooting/'):]
+            if not tid:
+                self._json_response(400, {'ok': False, 'erro': 'id obrigatorio'}); return
+            body = self._read_body()
+            if body is None: return
+            try:
+                patch = json.loads(body)
+                if not isinstance(patch, dict):
+                    self._json_response(400, {'ok': False, 'erro': 'payload invalido'}); return
+                lst = _load_trouble()
+                idx = next((i for i, e in enumerate(lst) if e.get('id') == tid), -1)
+                if idx < 0:
+                    self._json_response(404, {'ok': False, 'erro': 'nao encontrado'}); return
+                entry = lst[idx]
+                # Nao permite trocar id/ts via patch
+                for k, v in patch.items():
+                    if k in ('id', 'ts'): continue
+                    entry[k] = v
+                entry['atualizadoEm'] = datetime.now().isoformat()
+                lst[idx] = entry
+                _save_trouble(lst)
+                self._json_response(200, {'ok': True, 'entry': entry})
+            except Exception as e:
+                self._json_response(400, {'ok': False, 'erro': str(e)})
         else:
             self.send_response(404); self.end_headers()
 

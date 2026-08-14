@@ -23,6 +23,7 @@ data/config-email.json
 data/solicitacoes.json
 data/solicitacoes_hist.json
 data/periodica_hist.json
+data/troubleshooting.json
 
 # OS
 .DS_Store

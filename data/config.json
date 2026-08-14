@@ -34,11 +34,12 @@
     { "id": "cronCumprimento",  "label": "Cumprimento",        "format": "percent", "colorClass": "info"   }
   ],
   "navItems": [
+    { "id": "cronograma",        "label": "Cronograma de Atividade", "icon": "calendar", "badge": 0, "page": "cronograma"              },
     { "id": "analise-periodica", "label": "Análise Periódica",       "icon": "chart",    "badge": 0, "page": "analise-periodica" },
     { "id": "analise-extra",     "label": "Análise Extra",           "icon": "plus",     "badge": 0, "page": "analise-extra"          },
     { "id": "auditorias",        "label": "Auditorias",              "icon": "clipboard","badge": 0, "page": "auditorias"              },
     { "id": "sala-motor",        "label": "Sala do Motor",           "icon": "engine",   "badge": 0, "page": "sala-motor"              },
-    { "id": "cronograma",        "label": "Cronograma de Atividade", "icon": "calendar", "badge": 0, "page": "cronograma"              },
+    { "id": "troubleshooting",   "label": "Troubleshooting",         "icon": "alert",    "badge": 0, "page": "troubleshooting"         },
     { "id": "normas",            "label": "Normas CQ",               "icon": "file",     "badge": 0, "page": "normas"                  },
     { "id": "hinpyou",           "label": "Hinpyou",                 "icon": "bell",     "badge": 0, "page": "hinpyou"                 },
     { "id": "desenhos",          "label": "Desenhos",                "icon": "pen",      "badge": 0, "page": "desenhos"                },

@@ -22,6 +22,7 @@ import { DesenhosPage }          from '../components/DesenhosPage.js';
 import { HistoricoPeriodicaPage } from '../components/HistoricoPeriodicaPage.js';
 import { PlaceholderPage }        from '../components/PlaceholderPage.js';
 import { AuditoriasPage }         from '../components/AuditoriasPage.js';
+import { TroubleshootingPage }    from '../components/TroubleshootingPage.js';
 import { initAnaliseExtraHistory } from './initAnaliseExtra.js';
 
 /* ==========================================================================
@@ -131,11 +132,12 @@ class App {
         { id: 'cronCumprimento', label: 'Cumprimento',        format: 'percent', colorClass: 'info'   },
       ],
       navItems: [
+        { id: 'cronograma',        label: 'Cronograma de Atividade', icon: 'calendar', badge: 0,  page: 'cronograma'    },
         { id: 'analise-periodica', label: 'Análise Periódica',       icon: 'chart',    badge: 0, page: 'analise-periodica' },
         { id: 'analise-extra',     label: 'Análise Extra',           icon: 'plus',     badge: 0, page: 'analise-extra' },
         { id: 'auditorias',        label: 'Auditorias',              icon: 'clipboard',badge: 0, page: 'auditorias' },
         { id: 'sala-motor',        label: 'Sala do Motor',           icon: 'engine',   badge: 0, page: 'sala-motor' },
-        { id: 'cronograma',        label: 'Cronograma de Atividade', icon: 'calendar', badge: 0,  page: 'cronograma'    },
+        { id: 'troubleshooting',   label: 'Troubleshooting',         icon: 'alert',    badge: 0, page: 'troubleshooting' },
         { id: 'normas',            label: 'Normas CQ',               icon: 'file',     badge: 0,  page: 'normas'        },
         { id: 'hinpyou',           label: 'Hinpyou',                 icon: 'bell',     badge: 0,  page: 'hinpyou'       },
         { id: 'desenhos',          label: 'Desenhos',                icon: 'pen',      badge: 0,  page: 'desenhos'      },
@@ -200,6 +202,9 @@ class App {
 
     // Auditorias (TOYINPS): dashboard resumido dentro do painel + link pra app externo
     this._auditoriasPage = new AuditoriasPage(this._cfg, this._bus);
+
+    // Troubleshooting: registro de Nao Conformidades (linha ou fornecedor)
+    this._troublePage = new TroubleshootingPage(this._cfg, this._bus);
 
     // Módulos placeholder (a serem especificados)
     this._salaMotorPage = new PlaceholderPage({
@@ -795,6 +800,9 @@ class App {
     if (this._auditoriasPage?._page?.style.display !== 'none') {
       this._auditoriasPage.hide();
     }
+    if (this._troublePage?._page?.style.display !== 'none') {
+      this._troublePage.hide();
+    }
 
     if (page === 'hist-periodica') {
       this._histPeriodicaPage?.show();
@@ -855,6 +863,12 @@ class App {
       return;
     }
 
+    if (page === 'troubleshooting') {
+      this._troublePage?.show();
+      this._sidebar?.setActivePage('troubleshooting');
+      return;
+    }
+
     // Voltar ao dashboard principal
     this._cronogramaPage?.hide();
     this._normasPage?.hide();
@@ -863,6 +877,7 @@ class App {
     this._histPeriodicaPage?.hide();
     this._salaMotorPage?.hide();
     this._auditoriasPage?.hide();
+    this._troublePage?.hide();
     document.getElementById('crono-page')?.style.setProperty('display', 'none');
     document.getElementById('content')?.style.setProperty('display', '');
     this._sidebar?.setActivePage('analise-periodica');
