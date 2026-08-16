@@ -91,7 +91,7 @@ export class TroubleshootingPage {
     return `
       <div class="ts-topbar">
         <button class="ts-back" id="ts-back">← Voltar ao Dashboard</button>
-        <div class="ts-title">⚠ Troubleshooting <small>· NEXT-B</small></div>
+        <div class="ts-title">⚠ Troubleshooting</div>
         <div class="ts-center-wrap">
           <button class="ts-new" id="ts-new">+ NOVO TROUBLESHOOTING</button>
         </div>
@@ -485,8 +485,8 @@ export class TroubleshootingPage {
 
     // Estado inicial
     const e = isEdit ? JSON.parse(JSON.stringify(entry)) : {
-      planta:            'DVR',
-      projeto:           'NEXT-B',
+      planta:            '',
+      projeto:           '',
       numInforme:        this._nextNumInforme(),
       responsavel:       '',
       gatilhos:          [],
@@ -498,7 +498,7 @@ export class TroubleshootingPage {
       quem:              '',
       origem:            '',
       quando:            this._today(),
-      horario:           '1T',
+      horario:           '',
       qtdChecada:        '',
       qtdNG:             '',
       como:              '',
@@ -522,12 +522,6 @@ export class TroubleshootingPage {
       <div class="ts-modal">
         <div class="ts-modal__hdr">
           <h3>REGISTRO DE TROUBLESHOOTING</h3>
-          <div class="ts-modal__hdr-proj">
-            <label>Projeto:</label>
-            <select id="ts-projeto">
-              ${PROJETOS.map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
-            </select>
-          </div>
           <button class="ts-modal__close" id="ts-close" title="Fechar">×</button>
         </div>
         <div class="ts-modal__body" id="ts-body"></div>
@@ -553,12 +547,6 @@ export class TroubleshootingPage {
     document.addEventListener('keydown', escHandler);
     ov.querySelector('#ts-close').addEventListener('click', tryClose);
     ov.querySelector('#ts-cancel').addEventListener('click', tryClose);
-
-    // Select do projeto (no cabeçalho do modal)
-    ov.querySelector('#ts-projeto').addEventListener('change', ev => {
-      e.projeto = ev.target.value;
-      markDirty();
-    });
 
     const body = ov.querySelector('#ts-body');
     body.innerHTML = this._formHtml(e, opts);
@@ -601,9 +589,17 @@ export class TroubleshootingPage {
       <div class="tpl-informe">
         <div class="tpl-informe__plantas">
           <label class="informe-inline">
-            <span class="informe-lbl">Planta:</span>
-            <select data-field="planta">
+            <span class="informe-lbl">Planta: *</span>
+            <select data-field="planta" data-required="1">
+              <option value="">—</option>
               ${PLANTAS.map(p => `<option value="${p}"${e.planta===p?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </label>
+          <label class="informe-inline">
+            <span class="informe-lbl">Projeto: *</span>
+            <select data-field="projeto" data-required="1">
+              <option value="">—</option>
+              ${PROJETOS.map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
             </select>
           </label>
         </div>
@@ -627,7 +623,7 @@ export class TroubleshootingPage {
       <!-- Bloco PROBLEMA -->
       <div class="tpl-problema">
         <div class="cell wide-all problema-titulo">
-          <input type="text" data-field="problema" value="${this._esc(e.problema)}" placeholder="Digite o problema (ex: Contaminação)" style="text-align:center;background:transparent;border:none;color:#1a1a1a;font-weight:900;font-size:14px;">
+          <input type="text" data-field="problema" required value="${this._esc(e.problema)}" placeholder="* Digite o título do problema (ex: Contaminação)" style="text-align:center;background:transparent;border:none;color:#1a1a1a;font-weight:900;font-size:14px;">
         </div>
 
         <div class="cell lbl">Part Number:</div>
@@ -655,6 +651,7 @@ export class TroubleshootingPage {
         <div class="cell lbl">Horário:</div>
         <div class="cell">
           <select data-field="horario">
+            <option value="">—</option>
             ${['1T','2T','3T'].map(t => `<option value="${t}"${e.horario===t?' selected':''}>${t}</option>`).join('')}
           </select>
         </div>
@@ -815,7 +812,9 @@ export class TroubleshootingPage {
   }
 
   _validate(e) {
-    if (!e.problema?.trim())        { alert('Preencha a categoria do problema.'); return false; }
+    if (!e.problema?.trim())        { alert('Preencha o título (Problema em amarelo).'); return false; }
+    if (!e.planta?.trim())          { alert('Selecione a Planta (I. Informe).'); return false; }
+    if (!e.projeto?.trim())         { alert('Selecione o Projeto (I. Informe).'); return false; }
     if (!e.partNumber?.trim())      { alert('Preencha o Part Number.'); return false; }
     if (!e.pecaComProblema?.trim()) { alert('Preencha a peça com problema.'); return false; }
     if (!e.como?.trim())            { alert('Preencha o campo "Como (detalhe)".'); return false; }
