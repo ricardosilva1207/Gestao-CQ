@@ -312,6 +312,12 @@ export class TroubleshootingPage {
       }
       .tpl-anexo-item { display:flex; flex-direction:column; gap:6px; }
       .tpl-anexo-item small { font-size:10px; color:var(--text-mute); text-align:center; }
+      .tpl-anexo-txt {
+        width:100%; padding:8px 10px; border-radius:6px;
+        border:1px solid var(--border); background:var(--panel-2,#182338);
+        color:var(--text); font-size:12px; font-family:inherit;
+      }
+      .tpl-anexo-txt:focus { outline:none; border-color:var(--accent,#4ea3ff); }
       .tpl-fotos__slot {
         border:1px dashed var(--border); border-radius:8px; min-height:120px;
         display:flex; align-items:center; justify-content:center; position:relative;
@@ -505,7 +511,9 @@ export class TroubleshootingPage {
       obs:               '',
       fotos:             ['', '', ''],  // 3 slots principais
       orderLabel:        '',
+      orderLabelTxt:     '',
       rastreabilidade:   '',
+      rastreabilidadeTxt:'',
       comentarios:       '',
       status:            'aberta',
     };
@@ -674,15 +682,17 @@ export class TroubleshootingPage {
         ${[0,1,2].map(i => this._fotoSlotHtml('foto-'+i, e.fotos[i], 'Foto ' + (i+1))).join('')}
       </div>
 
-      <!-- ANEXOS ADICIONAIS (Order Label + Rastreabilidade) -->
-      <div class="tpl-sec-hdr">ANEXOS</div>
+      <!-- RASTREABILIDADE (Order Label + Rastreabilidade) -->
+      <div class="tpl-sec-hdr">RASTREABILIDADE</div>
       <div class="tpl-anexos">
         <div class="tpl-anexo-item">
           ${this._fotoSlotHtml('order-label', e.orderLabel, 'Order Label')}
+          <input type="text" class="tpl-anexo-txt" data-field="orderLabelTxt" value="${this._esc(e.orderLabelTxt)}" placeholder="Digite ou complemente (opcional)">
           <small>Order Label / Kanban / Pallet</small>
         </div>
         <div class="tpl-anexo-item">
           ${this._fotoSlotHtml('rastreab', e.rastreabilidade, 'Rastreab.')}
+          <input type="text" class="tpl-anexo-txt" data-field="rastreabilidadeTxt" value="${this._esc(e.rastreabilidadeTxt)}" placeholder="Digite ou complemente (opcional)">
           <small>Rastreabilidade Peça/Motor</small>
         </div>
       </div>
