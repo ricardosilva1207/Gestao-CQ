@@ -22,7 +22,8 @@ const LOCAL_KEY  = 'metrologia_troubleshooting';
 const OPTS_KEY   = 'metrologia_troubleshooting_opts';
 const REFRESH_MS = 30_000;
 
-const PLANTAS = ['PFZ', 'IDT', 'SOR', 'KDB', 'TASA', 'DVR'];
+const PLANTAS  = ['PFZ', 'IDT', 'SOR', 'KDB', 'TASA', 'DVR'];
+const PROJETOS = ['NEXT-B', 'M20A', 'SHAFT', 'ALPHA', 'BETA5'];
 
 const GATILHOS = [
   { v: 'in_house',        l: 'In House Saihatsu Boshi' },
@@ -40,7 +41,6 @@ const STATUS = [
 ];
 
 const OPTS_DEFAULT = {
-  problemas:    ['Contaminação', 'Dimensional', 'Aparência', 'Falta de peça', 'Torque', 'Outro'],
   origens:      ['CESTARI', 'CONTIMATIC', 'TS TECH', 'DENSO', 'AISIN', 'Outro'],
   responsaveis: [],
   onde:         ['Sala da Inspeção', 'Linha de Montagem', 'Recebimento', 'Estoque'],
@@ -193,6 +193,7 @@ export class TroubleshootingPage {
       .ts-pill { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px;
         border-radius:10px; text-transform:uppercase; letter-spacing:.4px; }
       .ts-pill--planta { background:rgba(59,130,246,.15); color:#3b82f6; }
+      .ts-pill--proj   { background:rgba(168,85,247,.15); color:#a855f7; }
       .ts-pill--gat { background:var(--panel-2,#182338); color:var(--text-mute); text-transform:none; letter-spacing:0; }
       .ts-pill--status { border:1px solid currentColor; }
       .ts-empty {
@@ -211,7 +212,13 @@ export class TroubleshootingPage {
         padding:12px 18px; background:#1a1a1a; color:#fff;
         display:flex; align-items:center; justify-content:space-between; gap:12px;
       }
-      .ts-modal__hdr h3 { margin:0; font-size:14px; font-weight:800; letter-spacing:.5px; }
+      .ts-modal__hdr h3 { margin:0; font-size:14px; font-weight:800; letter-spacing:.5px; flex:1; }
+      .ts-modal__hdr-proj { display:flex; align-items:center; gap:6px; margin-right:8px; }
+      .ts-modal__hdr-proj label { font-size:11px; color:rgba(255,255,255,.7); font-weight:600; }
+      .ts-modal__hdr-proj select {
+        padding:4px 8px; border-radius:5px; border:1px solid #444;
+        background:#2a2a2a; color:#fff; font-size:12px; font-weight:700;
+      }
       .ts-modal__close { background:none; border:none; font-size:22px; color:#fff; cursor:pointer; padding:0 8px; }
       .ts-modal__body { flex:1; overflow-y:auto; padding:0; background:var(--bg,#0d1521); }
       .ts-modal__ft { padding:12px 18px; border-top:1px solid var(--border);
@@ -238,8 +245,13 @@ export class TroubleshootingPage {
         padding:10px 14px; background:var(--panel,#131c2e);
         display:flex; flex-wrap:wrap; align-items:center; gap:12px;
       }
-      .tpl-informe__plantas label {
-        display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;
+      .tpl-informe__plantas .informe-inline {
+        display:inline-flex; align-items:center; gap:8px; font-size:12px;
+      }
+      .informe-lbl { font-weight:700; color:var(--text-mute); }
+      .tpl-informe__plantas select {
+        padding:6px 10px; border-radius:6px; border:1px solid var(--border);
+        background:var(--panel-2,#182338); color:var(--text); font-size:12px; font-weight:700;
       }
       .tpl-informe__num {
         display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center;
@@ -292,6 +304,14 @@ export class TroubleshootingPage {
         display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:start;
         border-top:1px solid var(--border);
       }
+      .tpl-fotos--only { grid-template-columns:1fr 1fr 1fr; }
+      .tpl-anexos {
+        padding:12px 14px; background:var(--panel,#131c2e);
+        display:grid; grid-template-columns:1fr 1fr; gap:12px;
+        border-top:1px solid var(--border);
+      }
+      .tpl-anexo-item { display:flex; flex-direction:column; gap:6px; }
+      .tpl-anexo-item small { font-size:10px; color:var(--text-mute); text-align:center; }
       .tpl-fotos__slot {
         border:1px dashed var(--border); border-radius:8px; min-height:120px;
         display:flex; align-items:center; justify-content:center; position:relative;
@@ -445,6 +465,7 @@ export class TroubleshootingPage {
           <p>${this._esc((e.como || '').slice(0, 140))}${(e.como || '').length > 140 ? '…' : ''}</p>
         </div>
         <div class="ts-card__meta">
+          ${e.projeto ? `<span class="ts-pill ts-pill--proj">${this._esc(e.projeto)}</span>` : ''}
           ${e.planta ? `<span class="ts-pill ts-pill--planta">${this._esc(e.planta)}</span>` : ''}
           ${gats.map(g => `<span class="ts-pill ts-pill--gat">${this._esc(g)}</span>`).join('')}
           ${stt ? `<span class="ts-pill ts-pill--status" style="color:${stt.cor}">${stt.l}</span>` : ''}
@@ -465,6 +486,7 @@ export class TroubleshootingPage {
     // Estado inicial
     const e = isEdit ? JSON.parse(JSON.stringify(entry)) : {
       planta:            'DVR',
+      projeto:           'NEXT-B',
       numInforme:        this._nextNumInforme(),
       responsavel:       '',
       gatilhos:          [],
@@ -499,7 +521,13 @@ export class TroubleshootingPage {
     ov.innerHTML = `
       <div class="ts-modal">
         <div class="ts-modal__hdr">
-          <h3>REGISTRO DE TROUBLESHOOTING | NEXT-B</h3>
+          <h3>REGISTRO DE TROUBLESHOOTING</h3>
+          <div class="ts-modal__hdr-proj">
+            <label>Projeto:</label>
+            <select id="ts-projeto">
+              ${PROJETOS.map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
           <button class="ts-modal__close" id="ts-close" title="Fechar">×</button>
         </div>
         <div class="ts-modal__body" id="ts-body"></div>
@@ -526,6 +554,12 @@ export class TroubleshootingPage {
     ov.querySelector('#ts-close').addEventListener('click', tryClose);
     ov.querySelector('#ts-cancel').addEventListener('click', tryClose);
 
+    // Select do projeto (no cabeçalho do modal)
+    ov.querySelector('#ts-projeto').addEventListener('change', ev => {
+      e.projeto = ev.target.value;
+      markDirty();
+    });
+
     const body = ov.querySelector('#ts-body');
     body.innerHTML = this._formHtml(e, opts);
     this._bindForm(body, e, markDirty);
@@ -537,7 +571,6 @@ export class TroubleshootingPage {
         // Persistir origem/responsavel novos como opções
         this._maybePersistOpt(opts, 'origens',      e.origem);
         this._maybePersistOpt(opts, 'responsaveis', e.responsavel);
-        this._maybePersistOpt(opts, 'problemas',    e.problema);
         this._maybePersistOpt(opts, 'onde',         e.onde);
         dirty = false;
         ov.remove();
@@ -559,20 +592,20 @@ export class TroubleshootingPage {
     const dl = (id, arr) => `<datalist id="${id}">${(arr ?? []).map(v => `<option value="${this._esc(v)}"></option>`).join('')}</datalist>`;
 
     return `
-      ${dl('dl-problema',    opts.problemas)}
       ${dl('dl-origem',      opts.origens)}
       ${dl('dl-responsavel', opts.responsaveis)}
       ${dl('dl-onde',        opts.onde)}
 
-      <!-- I. INFORME + II. O QUE GEROU (2 colunas) -->
+      <!-- I. INFORME -->
       <div class="tpl-sec-hdr">I. INFORME</div>
       <div class="tpl-informe">
         <div class="tpl-informe__plantas">
-          ${PLANTAS.map(p => `
-            <label>
-              <input type="radio" name="ts-planta" value="${p}"${e.planta === p ? ' checked' : ''}> ${p}
-            </label>
-          `).join('')}
+          <label class="informe-inline">
+            <span class="informe-lbl">Planta:</span>
+            <select data-field="planta">
+              ${PLANTAS.map(p => `<option value="${p}"${e.planta===p?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </label>
         </div>
         <div class="tpl-informe__num">
           <label>Nº</label>
@@ -594,7 +627,7 @@ export class TroubleshootingPage {
       <!-- Bloco PROBLEMA -->
       <div class="tpl-problema">
         <div class="cell wide-all problema-titulo">
-          <input type="text" data-field="problema" list="dl-problema" value="${this._esc(e.problema)}" placeholder="Problema (ex: Contaminação)" style="text-align:center;background:transparent;border:none;color:#1a1a1a;font-weight:900;font-size:14px;">
+          <input type="text" data-field="problema" value="${this._esc(e.problema)}" placeholder="Digite o problema (ex: Contaminação)" style="text-align:center;background:transparent;border:none;color:#1a1a1a;font-weight:900;font-size:14px;">
         </div>
 
         <div class="cell lbl">Part Number:</div>
@@ -638,13 +671,20 @@ export class TroubleshootingPage {
         <div class="cell wide"><textarea data-field="obs">${this._esc(e.obs)}</textarea></div>
       </div>
 
-      <!-- PECA NG (fotos) -->
+      <!-- PECA NG (fotos do defeito) -->
       <div class="tpl-sec-hdr tpl-sec-hdr--red">PEÇA NG</div>
-      <div class="tpl-fotos">
+      <div class="tpl-fotos tpl-fotos--only">
         ${[0,1,2].map(i => this._fotoSlotHtml('foto-'+i, e.fotos[i], 'Foto ' + (i+1))).join('')}
-        <div class="tpl-fotos__lateral">
+      </div>
+
+      <!-- ANEXOS ADICIONAIS (Order Label + Rastreabilidade) -->
+      <div class="tpl-sec-hdr">ANEXOS</div>
+      <div class="tpl-anexos">
+        <div class="tpl-anexo-item">
           ${this._fotoSlotHtml('order-label', e.orderLabel, 'Order Label')}
           <small>Order Label / Kanban / Pallet</small>
+        </div>
+        <div class="tpl-anexo-item">
           ${this._fotoSlotHtml('rastreab', e.rastreabilidade, 'Rastreab.')}
           <small>Rastreabilidade Peça/Motor</small>
         </div>
@@ -682,11 +722,6 @@ export class TroubleshootingPage {
         e[inp.dataset.field] = v;
         markDirty();
       });
-    });
-
-    // Radio planta
-    body.querySelectorAll('input[name="ts-planta"]').forEach(r => {
-      r.addEventListener('change', () => { e.planta = r.value; markDirty(); });
     });
 
     // Radio possui anexo
@@ -866,7 +901,6 @@ export class TroubleshootingPage {
         </div>
         <div class="ts-modal__body">
           <div class="opts-grid">
-            ${mk('problemas',    'Categorias de problema')}
             ${mk('origens',      'Origens / fornecedores')}
             ${mk('responsaveis', 'Responsáveis frequentes')}
             ${mk('onde',         'Locais (Onde)')}
@@ -887,7 +921,7 @@ export class TroubleshootingPage {
     ov.querySelector('#opts-cancel').addEventListener('click', close);
     ov.querySelector('#opts-save').addEventListener('click', () => {
       const upd = { ...opts };
-      ['problemas', 'origens', 'responsaveis', 'onde'].forEach(k => {
+      ['origens', 'responsaveis', 'onde'].forEach(k => {
         const raw = ov.querySelector('#opts-' + k).value;
         upd[k] = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       });
