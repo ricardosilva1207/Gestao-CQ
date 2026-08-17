@@ -17,6 +17,7 @@
  */
 
 import { adminFetch } from '../js/utils.js';
+import { ImageAnnotator } from './ImageAnnotator.js';
 
 const LOCAL_KEY  = 'metrologia_troubleshooting';
 const OPTS_KEY   = 'metrologia_troubleshooting_opts';
@@ -338,6 +339,18 @@ export class TroubleshootingPage {
         border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; opacity:0; transition:opacity .15s;
       }
       .tpl-fotos__slot:hover .del { opacity:1; }
+      .foto-actions {
+        position:absolute; top:6px; right:6px;
+        display:flex; gap:4px; opacity:0; transition:opacity .15s;
+      }
+      .tpl-fotos__slot:hover .foto-actions { opacity:1; }
+      .foto-btn {
+        min-width:28px; height:28px; padding:0 8px;
+        background:rgba(0,0,0,.75); color:#fff; border:none; border-radius:5px;
+        font-size:13px; font-weight:700; cursor:pointer;
+      }
+      .foto-btn:hover { background:#4ea3ff; }
+      .foto-btn--danger:hover { background:#ef4444; }
       .tpl-fotos__lateral { display:flex; flex-direction:column; gap:6px; min-width:180px; }
       .tpl-fotos__lateral .tpl-fotos__slot { min-height:80px; }
       .tpl-fotos__lateral small { font-size:9px; color:var(--text-mute); text-align:center; }
@@ -733,7 +746,13 @@ export class TroubleshootingPage {
   _fotoSlotHtml(slot, dataUrl, hint) {
     return `
       <div class="tpl-fotos__slot" data-slot="${slot}">
-        ${dataUrl ? `<img src="${dataUrl}" alt=""><button class="del" data-del-slot="${slot}">✕</button>` : `<div class="hint">📷 ${this._esc(hint)}<br><small>Clique p/ adicionar</small></div>`}
+        ${dataUrl
+          ? `<img src="${dataUrl}" alt="">
+             <div class="foto-actions">
+               <button class="foto-btn" data-edit-slot="${slot}" title="Editar imagem">✏</button>
+               <button class="foto-btn foto-btn--danger" data-del-slot="${slot}" title="Remover">✕</button>
+             </div>`
+          : `<div class="hint">📷 ${this._esc(hint)}<br><small>Clique p/ adicionar</small></div>`}
       </div>
     `;
   }
@@ -764,39 +783,105 @@ export class TroubleshootingPage {
       });
     });
 
-    // Fotos: clique nos slots
+    // Fotos: clique nos slots (só quando não é botão de ação)
     body.querySelectorAll('.tpl-fotos__slot').forEach(slot => {
       slot.addEventListener('click', ev => {
-        if (ev.target.matches('[data-del-slot]')) return; // deletar tratado abaixo
+        if (ev.target.closest('[data-del-slot],[data-edit-slot]')) return;
         const key = slot.dataset.slot;
-        this._pickImage((dataUrl) => {
-          this._setFoto(e, key, dataUrl);
-          markDirty();
-          // Re-render só o container de fotos
-          const container = body.querySelector('.tpl-fotos');
-          if (container) container.outerHTML = this._formHtml(e, this._loadOpts()).match(/<div class="tpl-fotos">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? container.outerHTML;
-          this._bindForm(body, e, markDirty); // rebind
-        });
+        const cur = this._getFoto(e, key);
+        if (cur) {
+          // Já tem imagem: clicar no fundo abre o editor
+          this._editFoto(e, key, () => { markDirty(); this._reRenderFotos(body, e); });
+        } else {
+          this._pickImage((dataUrl) => {
+            this._setFoto(e, key, dataUrl);
+            markDirty();
+            this._reRenderFotos(body, e);
+          });
+        }
       });
     });
+
+    // Botão editar
+    body.querySelectorAll('[data-edit-slot]').forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const key = btn.dataset.editSlot;
+        this._editFoto(e, key, () => { markDirty(); this._reRenderFotos(body, e); });
+      });
+    });
+    // Botão remover
     body.querySelectorAll('[data-del-slot]').forEach(btn => {
       btn.addEventListener('click', ev => {
         ev.stopPropagation();
         const key = btn.dataset.delSlot;
         this._setFoto(e, key, '');
         markDirty();
-        // Reset do slot HTML
-        const slot = btn.closest('.tpl-fotos__slot');
-        slot.innerHTML = `<div class="hint">📷 Clique p/ adicionar</div>`;
-        slot.addEventListener('click', () => {
-          this._pickImage((dataUrl) => {
-            this._setFoto(e, key, dataUrl);
-            markDirty();
-            body.querySelector('.tpl-fotos').outerHTML = body.querySelector('.tpl-fotos').outerHTML; // no-op fallback
-          });
-        });
+        this._reRenderFotos(body, e);
       });
     });
+  }
+
+  _reRenderFotos(body, e) {
+    // Reconstrói só as seções PEÇA NG e RASTREABILIDADE (evita recriar o form inteiro)
+    const html = this._formHtml(e, this._loadOpts());
+    const parser = document.createElement('div');
+    parser.innerHTML = html;
+    // Substitui .tpl-fotos e .tpl-anexos
+    const oldFotos  = body.querySelector('.tpl-fotos');
+    const newFotos  = parser.querySelector('.tpl-fotos');
+    if (oldFotos && newFotos) oldFotos.replaceWith(newFotos);
+    const oldAnex = body.querySelector('.tpl-anexos');
+    const newAnex = parser.querySelector('.tpl-anexos');
+    if (oldAnex && newAnex) oldAnex.replaceWith(newAnex);
+    // Rebind
+    this._bindFormFotos(body, e);
+  }
+
+  _bindFormFotos(body, e) {
+    // Rebind só das partes de fotos após reRender (sem recriar todos os listeners do form)
+    const markDirty = () => { /* dirty já marcado externamente */ };
+    body.querySelectorAll('.tpl-fotos__slot').forEach(slot => {
+      slot.addEventListener('click', ev => {
+        if (ev.target.closest('[data-del-slot],[data-edit-slot]')) return;
+        const key = slot.dataset.slot;
+        const cur = this._getFoto(e, key);
+        if (cur) this._editFoto(e, key, () => this._reRenderFotos(body, e));
+        else this._pickImage((dataUrl) => { this._setFoto(e, key, dataUrl); this._reRenderFotos(body, e); });
+      });
+    });
+    body.querySelectorAll('[data-edit-slot]').forEach(btn => {
+      btn.addEventListener('click', ev => { ev.stopPropagation();
+        this._editFoto(e, btn.dataset.editSlot, () => this._reRenderFotos(body, e)); });
+    });
+    body.querySelectorAll('[data-del-slot]').forEach(btn => {
+      btn.addEventListener('click', ev => { ev.stopPropagation();
+        this._setFoto(e, btn.dataset.delSlot, ''); this._reRenderFotos(body, e); });
+    });
+    // Rebind dos inputs de texto dos anexos
+    body.querySelectorAll('.tpl-anexos [data-field]').forEach(inp => {
+      inp.addEventListener('input', () => { e[inp.dataset.field] = inp.value; });
+    });
+  }
+
+  _editFoto(e, key, onDone) {
+    const cur = this._getFoto(e, key);
+    if (!cur) return;
+    ImageAnnotator.open(cur, (newUrl, cancelled) => {
+      if (cancelled || !newUrl) return;
+      this._setFoto(e, key, newUrl);
+      onDone?.();
+    });
+  }
+
+  _getFoto(e, key) {
+    if (key.startsWith('foto-')) {
+      const idx = Number(key.slice(5));
+      return Array.isArray(e.fotos) ? (e.fotos[idx] || '') : '';
+    }
+    if (key === 'order-label') return e.orderLabel || '';
+    if (key === 'rastreab')    return e.rastreabilidade || '';
+    return '';
   }
 
   _setFoto(e, key, dataUrl) {
