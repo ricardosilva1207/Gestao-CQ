@@ -22,8 +22,9 @@ const LOCAL_KEY  = 'metrologia_troubleshooting';
 const OPTS_KEY   = 'metrologia_troubleshooting_opts';
 const REFRESH_MS = 30_000;
 
-const PLANTAS  = ['PFZ', 'IDT', 'SOR', 'KDB', 'TASA', 'DVR'];
-const PROJETOS = ['NEXT-B', 'M20A', 'SHAFT', 'ALPHA', 'BETA5'];
+const PLANTAS     = ['PFZ', 'IDT', 'SOR', 'KDB', 'TASA', 'DVR'];
+const PROJETOS    = ['NEXT-B', 'M20A', 'SHAFT', 'ALPHA', 'BETA5'];
+const RESPONSAVEIS = ['Fornecedor', 'Montagem', 'Usinagem', 'Problema Logísticos', 'Planta de Veículos', 'Fundição', 'Forjaria'];
 
 const GATILHOS = [
   { v: 'in_house',        l: 'In House Saihatsu Boshi' },
@@ -53,7 +54,7 @@ export class TroubleshootingPage {
     this._page  = null;
     this._list  = [];
     this._timer = null;
-    this._filters = { planta: '', gatilho: '', status: '', q: '' };
+    this._filters = { planta: '', responsavel: '', gatilho: '', status: '', q: '' };
     this._init();
   }
 
@@ -71,10 +72,11 @@ export class TroubleshootingPage {
     page.querySelector('#ts-refresh').addEventListener('click', () => this._reload());
     page.querySelector('#ts-edit-opts').addEventListener('click', () => this._openOptsEditor());
 
-    ['#ts-f-planta', '#ts-f-gatilho', '#ts-f-status', '#ts-f-q'].forEach(sel => {
+    ['#ts-f-planta', '#ts-f-resp', '#ts-f-gatilho', '#ts-f-status', '#ts-f-q'].forEach(sel => {
       const el = page.querySelector(sel);
       el.addEventListener('input', () => {
         const key = sel === '#ts-f-planta' ? 'planta'
+                  : sel === '#ts-f-resp'   ? 'responsavel'
                   : sel === '#ts-f-gatilho' ? 'gatilho'
                   : sel === '#ts-f-status' ? 'status' : 'q';
         this._filters[key] = el.value.trim().toLowerCase();
@@ -107,6 +109,10 @@ export class TroubleshootingPage {
           <select id="ts-f-planta" class="ts-sel">
             <option value="">Planta: todas</option>
             ${PLANTAS.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('')}
+          </select>
+          <select id="ts-f-resp" class="ts-sel">
+            <option value="">Responsável: todos</option>
+            ${RESPONSAVEIS.map(r => `<option value="${r.toLowerCase()}">${r}</option>`).join('')}
           </select>
           <select id="ts-f-gatilho" class="ts-sel">
             <option value="">O que gerou: todos</option>
@@ -194,6 +200,7 @@ export class TroubleshootingPage {
         border-radius:10px; text-transform:uppercase; letter-spacing:.4px; }
       .ts-pill--planta { background:rgba(59,130,246,.15); color:#3b82f6; }
       .ts-pill--proj   { background:rgba(168,85,247,.15); color:#a855f7; }
+      .ts-pill--resp   { background:rgba(34,197,94,.15);  color:#22c55e; }
       .ts-pill--gat { background:var(--panel-2,#182338); color:var(--text-mute); text-transform:none; letter-spacing:0; }
       .ts-pill--status { border:1px solid currentColor; }
       .ts-empty {
@@ -409,14 +416,15 @@ export class TroubleshootingPage {
   _saveOpts(o) { try { localStorage.setItem(OPTS_KEY, JSON.stringify(o)); } catch {} }
 
   _filtered() {
-    const { planta, gatilho, status, q } = this._filters;
+    const { planta, responsavel, gatilho, status, q } = this._filters;
     return this._list.filter(e => {
       if (planta && String(e.planta ?? '').toLowerCase() !== planta) return false;
+      if (responsavel && String(e.responsavelArea ?? '').toLowerCase() !== responsavel) return false;
       if (gatilho && !((e.gatilhos ?? []).includes(gatilho))) return false;
       if (status && (e.status ?? '') !== status) return false;
       if (q) {
-        const blob = [e.numInforme, e.responsavel, e.problema, e.partNumber, e.pecaComProblema,
-                      e.onde, e.quem, e.origem, e.como, e.obs, e.comentarios]
+        const blob = [e.numInforme, e.responsavel, e.responsavelArea, e.problema, e.partNumber,
+                      e.pecaComProblema, e.onde, e.quem, e.origem, e.como, e.obs, e.comentarios]
           .filter(Boolean).join(' ').toLowerCase();
         if (!blob.includes(q)) return false;
       }
@@ -473,6 +481,7 @@ export class TroubleshootingPage {
         <div class="ts-card__meta">
           ${e.projeto ? `<span class="ts-pill ts-pill--proj">${this._esc(e.projeto)}</span>` : ''}
           ${e.planta ? `<span class="ts-pill ts-pill--planta">${this._esc(e.planta)}</span>` : ''}
+          ${e.responsavelArea ? `<span class="ts-pill ts-pill--resp">${this._esc(e.responsavelArea)}</span>` : ''}
           ${gats.map(g => `<span class="ts-pill ts-pill--gat">${this._esc(g)}</span>`).join('')}
           ${stt ? `<span class="ts-pill ts-pill--status" style="color:${stt.cor}">${stt.l}</span>` : ''}
         </div>
@@ -493,6 +502,7 @@ export class TroubleshootingPage {
     const e = isEdit ? JSON.parse(JSON.stringify(entry)) : {
       planta:            '',
       projeto:           '',
+      responsavelArea:   '',
       numInforme:        this._nextNumInforme(),
       responsavel:       '',
       gatilhos:          [],
@@ -608,6 +618,13 @@ export class TroubleshootingPage {
             <select data-field="projeto" data-required="1">
               <option value="">—</option>
               ${PROJETOS.map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </label>
+          <label class="informe-inline">
+            <span class="informe-lbl">Responsável: *</span>
+            <select data-field="responsavelArea" data-required="1">
+              <option value="">—</option>
+              ${RESPONSAVEIS.map(r => `<option value="${r}"${e.responsavelArea===r?' selected':''}>${r}</option>`).join('')}
             </select>
           </label>
         </div>
@@ -825,6 +842,7 @@ export class TroubleshootingPage {
     if (!e.problema?.trim())        { alert('Preencha o título (Problema em amarelo).'); return false; }
     if (!e.planta?.trim())          { alert('Selecione a Planta (I. Informe).'); return false; }
     if (!e.projeto?.trim())         { alert('Selecione o Projeto (I. Informe).'); return false; }
+    if (!e.responsavelArea?.trim()) { alert('Selecione o Responsável (I. Informe).'); return false; }
     if (!e.partNumber?.trim())      { alert('Preencha o Part Number.'); return false; }
     if (!e.pecaComProblema?.trim()) { alert('Preencha a peça com problema.'); return false; }
     if (!e.como?.trim())            { alert('Preencha o campo "Como (detalhe)".'); return false; }
