@@ -432,21 +432,15 @@ export class ImageAnnotator {
     tmp.width = w; tmp.height = h;
     tmp.getContext('2d').drawImage(flat, x, y, w, h, 0, 0, w, h);
     const newImg = new Image();
+    // Snapshot ANTES de trocar a imagem, para undo funcionar
+    this._pushHistory();
     newImg.onload = () => {
-      this._pushHistory();
       this._img = newImg;
       this._shapes = [];
       this._cropRect = null;
-      // Reajusta canvas
       this._canvas.width  = w;
       this._canvas.height = h;
-      const wrap = this._ov.querySelector('#annot-wrap');
-      const maxW = wrap.clientWidth  - 32;
-      const maxH = wrap.clientHeight - 32;
-      const sc = Math.min(1, maxW / w, maxH / h);
-      this._canvas.style.width  = Math.round(w * sc) + 'px';
-      this._canvas.style.height = Math.round(h * sc) + 'px';
-      this._displayScale = sc;
+      this._refitCanvas();
       this._render();
       this._updateInfo();
     };
@@ -455,15 +449,49 @@ export class ImageAnnotator {
 
   /* ── Undo / Clear ───────────────────────────────────────────── */
   _pushHistory() {
-    // Guarda snapshot antes de mudar
-    this._history.push(JSON.stringify(this._shapes));
+    // Snapshot completo (inclui a imagem base — permite desfazer crop)
+    const cvs = document.createElement('canvas');
+    cvs.width = this._canvas.width; cvs.height = this._canvas.height;
+    cvs.getContext('2d').drawImage(this._img, 0, 0, cvs.width, cvs.height);
+    this._history.push({
+      shapes: JSON.stringify(this._shapes),
+      imgUrl: cvs.toDataURL('image/png'),
+      w: this._canvas.width,
+      h: this._canvas.height,
+    });
     if (this._history.length > 50) this._history.shift();
   }
+
   _undo() {
     const prev = this._history.pop();
-    if (prev == null) return;
-    try { this._shapes = JSON.parse(prev); } catch { this._shapes = []; }
-    this._render(); this._updateInfo();
+    if (!prev) return;
+    try { this._shapes = JSON.parse(prev.shapes); } catch { this._shapes = []; }
+    const needImage = prev.w !== this._canvas.width || prev.h !== this._canvas.height;
+    if (needImage) {
+      const img = new Image();
+      img.onload = () => {
+        this._img = img;
+        this._canvas.width  = prev.w;
+        this._canvas.height = prev.h;
+        this._refitCanvas();
+        this._render(); this._updateInfo();
+      };
+      img.src = prev.imgUrl;
+    } else {
+      const img = new Image();
+      img.onload = () => { this._img = img; this._render(); this._updateInfo(); };
+      img.src = prev.imgUrl;
+    }
+  }
+
+  _refitCanvas() {
+    const wrap = this._ov.querySelector('#annot-wrap');
+    const maxW = wrap.clientWidth  - 32;
+    const maxH = wrap.clientHeight - 32;
+    const sc = Math.min(1, maxW / this._canvas.width, maxH / this._canvas.height);
+    this._canvas.style.width  = Math.round(this._canvas.width  * sc) + 'px';
+    this._canvas.style.height = Math.round(this._canvas.height * sc) + 'px';
+    this._displayScale = sc;
   }
   _clear() {
     if (!this._shapes.length && !this._cropRect) return;
@@ -479,7 +507,11 @@ export class ImageAnnotator {
     c.clearRect(0, 0, this._canvas.width, this._canvas.height);
     c.drawImage(this._img, 0, 0, this._canvas.width, this._canvas.height);
     for (const s of this._shapes) this._drawShape(c, s);
-    if (this._current) this._drawShape(c, this._current);
+    // Preview do shape sendo desenhado: crop tem overlay proprio
+    if (this._current) {
+      if (this._current.kind === 'crop') this._drawCropOverlay(c, this._current);
+      else this._drawShape(c, this._current);
+    }
     if (this._cropRect) this._drawCropOverlay(c, this._cropRect);
   }
   _drawShape(c, s) {

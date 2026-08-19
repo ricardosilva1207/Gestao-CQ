@@ -8,7 +8,7 @@
  *
  * Bump CACHE_VERSION para forçar atualização dos clientes.
  */
-const CACHE_VERSION = 'metrologia-v17';
+const CACHE_VERSION = 'metrologia-v18';
 const SHELL_CACHE   = `${CACHE_VERSION}-shell`;
 const DATA_CACHE    = `${CACHE_VERSION}-data`;
 

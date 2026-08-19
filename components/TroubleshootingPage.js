@@ -199,6 +199,14 @@ export class TroubleshootingPage {
       .ts-card__meta { text-align:right; display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
       .ts-pill { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px;
         border-radius:10px; text-transform:uppercase; letter-spacing:.4px; }
+      .ts-card__actions { display:flex; gap:4px; margin-top:6px; }
+      .ts-card-btn {
+        min-width:26px; height:26px; padding:0 6px;
+        background:var(--panel-2,#182338); border:1px solid var(--border);
+        color:var(--text-mute); font-size:12px; border-radius:5px; cursor:pointer;
+        transition:all .12s;
+      }
+      .ts-card-btn:hover { border-color:var(--accent,#4ea3ff); color:var(--accent,#4ea3ff); background:rgba(78,163,255,.08); }
       .ts-pill--planta { background:rgba(59,130,246,.15); color:#3b82f6; }
       .ts-pill--proj   { background:rgba(168,85,247,.15); color:#a855f7; }
       .ts-pill--resp   { background:rgba(34,197,94,.15);  color:#22c55e; }
@@ -497,9 +505,19 @@ export class TroubleshootingPage {
           ${e.responsavelArea ? `<span class="ts-pill ts-pill--resp">${this._esc(e.responsavelArea)}</span>` : ''}
           ${gats.map(g => `<span class="ts-pill ts-pill--gat">${this._esc(g)}</span>`).join('')}
           ${stt ? `<span class="ts-pill ts-pill--status" style="color:${stt.cor}">${stt.l}</span>` : ''}
+          <div class="ts-card__actions">
+            <button class="ts-card-btn" data-act="view" title="Visualizar (modo relatório)">👁</button>
+            <button class="ts-card-btn" data-act="edit" title="Editar">✏</button>
+            <button class="ts-card-btn" data-act="pdf"  title="Imprimir / Salvar PDF">🖨</button>
+          </div>
         </div>
       `;
-      card.addEventListener('click', () => this._openForm(e));
+      // Handlers dos botoes internos (bloqueia o clique do card)
+      card.querySelector('[data-act="view"]').addEventListener('click', ev => { ev.stopPropagation(); this._openReport(e, false); });
+      card.querySelector('[data-act="edit"]').addEventListener('click', ev => { ev.stopPropagation(); this._openForm(e); });
+      card.querySelector('[data-act="pdf"]').addEventListener('click',  ev => { ev.stopPropagation(); this._openReport(e, true); });
+      // Clique no card em area livre = abrir em modo visualizacao
+      card.addEventListener('click', () => this._openReport(e, false));
       el.appendChild(card);
     });
   }
@@ -560,6 +578,7 @@ export class TroubleshootingPage {
           ${isEdit ? '<button class="ts-btn ts-btn--danger" id="ts-del">🗑 Remover</button>' : '<div></div>'}
           <div class="right">
             <button class="ts-btn" id="ts-cancel">Cancelar</button>
+            <button class="ts-btn" id="ts-save-pdf" title="Salvar e abrir para imprimir/PDF">💾 Salvar + PDF</button>
             <button class="ts-btn ts-btn--primary" id="ts-save">${isEdit ? 'Atualizar' : 'Salvar'}</button>
           </div>
         </div>
@@ -583,20 +602,21 @@ export class TroubleshootingPage {
     body.innerHTML = this._formHtml(e, opts);
     this._bindForm(body, e, markDirty);
 
-    ov.querySelector('#ts-save').addEventListener('click', async () => {
+    const doSave = async (openReportAfter) => {
       if (!this._validate(e)) return;
       const ok = isEdit ? await this._update(e) : await this._create(e);
-      if (ok) {
-        // Persistir origem/responsavel novos como opções
-        this._maybePersistOpt(opts, 'origens',      e.origem);
-        this._maybePersistOpt(opts, 'responsaveis', e.responsavel);
-        this._maybePersistOpt(opts, 'onde',         e.onde);
-        dirty = false;
-        ov.remove();
-        document.removeEventListener('keydown', escHandler);
-        await this._reload();
-      }
-    });
+      if (!ok) return;
+      this._maybePersistOpt(opts, 'origens',      e.origem);
+      this._maybePersistOpt(opts, 'responsaveis', e.responsavel);
+      this._maybePersistOpt(opts, 'onde',         e.onde);
+      dirty = false;
+      ov.remove();
+      document.removeEventListener('keydown', escHandler);
+      await this._reload();
+      if (openReportAfter) this._openReport(e, true);
+    };
+    ov.querySelector('#ts-save').addEventListener('click',     () => doSave(false));
+    ov.querySelector('#ts-save-pdf').addEventListener('click', () => doSave(true));
 
     if (isEdit) {
       ov.querySelector('#ts-del').addEventListener('click', async () => {
@@ -1040,6 +1060,151 @@ export class TroubleshootingPage {
       this._saveOpts(upd);
       close();
     });
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     VISUALIZAR / IMPRIMIR (layout do template oficial)
+  ══════════════════════════════════════════════════════════ */
+  _openReport(entry, autoPrint) {
+    const html = this._reportHtml(entry, autoPrint);
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Nao foi possivel abrir a visualizacao (pop-up bloqueado).');
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+  }
+
+  _reportHtml(e, autoPrint) {
+    const esc = v => this._esc(v);
+    const chk = v => v ? '☑' : '☐';
+    const dataFmt = e.quando ? e.quando.split('-').reverse().join('/') : '';
+    const fotos = (e.fotos ?? []).filter(Boolean).slice(0, 3);
+    const gatSet = new Set(e.gatilhos ?? []);
+    const printCss = autoPrint ? '@media print { @page { size: A4 landscape; margin:6mm; } }' : '';
+
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Troubleshooting Nº ${esc(e.numInforme ?? '')}</title>
+<style>
+  ${printCss}
+  * { box-sizing:border-box; }
+  body { margin:0; padding:12px; font-family: Arial, Helvetica, sans-serif; color:#111; background:#f0f0f0; }
+  .page { max-width: 1180px; margin:0 auto; background:#fff; padding:14px; box-shadow:0 4px 18px rgba(0,0,0,.15); }
+  .print-bar { position:sticky; top:0; z-index:10; background:#1a1a1a; color:#fff; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; }
+  .print-bar button { padding:6px 14px; border-radius:5px; border:none; background:#4ea3ff; color:#fff; cursor:pointer; font-weight:700; }
+  @media print { .print-bar { display:none; } body { background:#fff; padding:0; } .page { box-shadow:none; max-width:none; padding:6mm; } }
+
+  .r-title { background:#1a1a1a; color:#fff; padding:8px 12px; font-size:16px; font-weight:800; letter-spacing:.5px; text-align:right; }
+  .r-title small { display:block; font-size:11px; font-weight:400; color:#bbb; margin-top:2px; }
+  .r-grid { display:grid; grid-template-columns: 1fr 1fr; gap:0; border:1px solid #333; border-top:none; }
+  .r-cell { border-right:1px solid #333; border-bottom:1px solid #333; padding:6px 10px; font-size:12px; }
+  .r-cell:last-child { border-right:none; }
+  .r-hdr-blue { background:#132; color:#fff; padding:4px 10px; font-weight:800; font-size:11px; letter-spacing:.4px; }
+  .r-informe { display:grid; grid-template-columns: 1fr auto; gap:0; }
+  .r-plantas { display:flex; flex-wrap:wrap; gap:14px; padding:8px 12px; align-items:center; font-size:12px; }
+  .r-num { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; padding:8px 12px; background:#f7f7f7; border-left:1px solid #ccc; align-items:center; min-width:260px; font-size:12px; }
+  .r-num .lbl { font-weight:700; }
+  .r-gat { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; padding:8px 12px; font-size:12px; border-top:1px solid #ddd; }
+  .r-problema { display:grid; grid-template-columns:130px 1fr 130px 1fr; border-top:1px solid #333; }
+  .r-problema .rcell { border-right:1px solid #ddd; border-bottom:1px solid #ddd; padding:6px 10px; font-size:12px; background:#fff; }
+  .r-problema .rcell.lbl { background:#f0f0f0; font-weight:700; }
+  .r-problema .rcell.wide { grid-column: span 3; }
+  .r-problema .rcell.wide-all { grid-column: span 4; }
+  .r-problema .titulo { background:#f4c518; text-align:center; font-weight:900; font-size:15px; padding:10px; }
+  .r-fotos { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding:8px; border-top:1px solid #333; }
+  .r-foto { min-height:200px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafafa; }
+  .r-foto img { max-width:100%; max-height:260px; object-fit:contain; }
+  .r-red { background:#c0392b; color:#fff; text-align:center; padding:6px 10px; font-weight:800; font-size:12px; letter-spacing:.5px; }
+  .r-rastr { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; }
+  .r-rastr-item { border:1px solid #ddd; padding:6px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .r-rastr-item img { max-width:100%; max-height:120px; }
+  .r-rastr-item small { color:#666; font-size:10px; }
+  .r-com { padding:8px 12px; font-size:12px; min-height:60px; border-top:1px solid #333; }
+</style>
+</head><body>
+  <div class="print-bar">
+    <div>Relatório #${esc(e.numInforme ?? '')}</div>
+    <div>
+      <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+      &nbsp;
+      <button onclick="window.close()" style="background:#666;">Fechar</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="r-title">REGISTRO DE TROUBLESHOOTING<small>Projeto: ${esc(e.projeto ?? '—')}</small></div>
+
+    <div class="r-hdr-blue">I. INFORME</div>
+    <div class="r-informe">
+      <div class="r-plantas">
+        ${['PFZ','IDT','SOR','KDB','TASA','DVR'].map(p => `${e.planta===p?'●':'○'} ${p}`).join('&nbsp;&nbsp;&nbsp;')}
+        &nbsp;&nbsp;|&nbsp;&nbsp;<strong>Responsável:</strong> ${esc(e.responsavelArea ?? '—')}
+      </div>
+      <div class="r-num">
+        <span class="lbl">Nº:</span><span>${esc(e.numInforme ?? '')}</span>
+        <span class="lbl">Resp.:</span><span>${esc(e.responsavel ?? '')}</span>
+      </div>
+    </div>
+
+    <div class="r-hdr-blue">II. O QUE GEROU?</div>
+    <div class="r-gat">
+      ${[
+        ['in_house','In House Saihatsu Boshi'],
+        ['rnc_er_b','RNC / ER-B Fornecedor'],
+        ['rncl_logistica','RNCL Logística'],
+        ['segregacao','Segregação / Reparo'],
+        ['shipping_stop','Shipping Stop'],
+        ['notif_cliente','Notificação p/ Cliente'],
+      ].map(([v,l]) => `<div>${chk(gatSet.has(v))} ${l}</div>`).join('')}
+    </div>
+
+    <div class="r-problema">
+      <div class="rcell titulo wide-all">${esc(e.problema ?? '—')}</div>
+
+      <div class="rcell lbl">Part Number:</div><div class="rcell">${esc(e.partNumber ?? '')}</div>
+      <div class="rcell lbl">Peça c/ problema</div><div class="rcell">${esc(e.pecaComProblema ?? '')}</div>
+
+      <div class="rcell lbl">Onde:</div><div class="rcell">${esc(e.onde ?? '')}</div>
+      <div class="rcell lbl">Possui anexo:</div><div class="rcell">${e.possuiAnexo ? '☑ Sim' : '☑ Não'}</div>
+
+      <div class="rcell lbl">Quem:</div><div class="rcell">${esc(e.quem ?? '')}</div>
+      <div class="rcell lbl">Origem:</div><div class="rcell">${esc(e.origem ?? '')}</div>
+
+      <div class="rcell lbl">Quando:</div><div class="rcell">${esc(dataFmt)}</div>
+      <div class="rcell lbl">Horário:</div><div class="rcell">${esc(e.horario ?? '')}</div>
+
+      <div class="rcell lbl">Qtd. checada:</div><div class="rcell">${esc(e.qtdChecada ?? '')}</div>
+      <div class="rcell lbl">Qtd. NG:</div><div class="rcell">${esc(e.qtdNG ?? '')}</div>
+
+      <div class="rcell lbl">Como (detalhe):</div><div class="rcell wide">${esc(e.como ?? '')}</div>
+      <div class="rcell lbl">Obs:</div><div class="rcell wide">${esc(e.obs ?? '')}</div>
+    </div>
+
+    <div class="r-red">PEÇA NG</div>
+    <div class="r-fotos">
+      ${[0,1,2].map(i => `<div class="r-foto">${fotos[i] ? `<img src="${fotos[i]}">` : '&nbsp;'}</div>`).join('')}
+    </div>
+
+    <div class="r-hdr-blue">RASTREABILIDADE</div>
+    <div class="r-rastr">
+      <div class="r-rastr-item">
+        ${e.orderLabel ? `<img src="${e.orderLabel}">` : '<div style="color:#999">(sem imagem)</div>'}
+        ${e.orderLabelTxt ? `<div style="text-align:center;font-size:11px;">${esc(e.orderLabelTxt)}</div>` : ''}
+        <small>Order Label / Kanban / Pallet</small>
+      </div>
+      <div class="r-rastr-item">
+        ${e.rastreabilidade ? `<img src="${e.rastreabilidade}">` : '<div style="color:#999">(sem imagem)</div>'}
+        ${e.rastreabilidadeTxt ? `<div style="text-align:center;font-size:11px;">${esc(e.rastreabilidadeTxt)}</div>` : ''}
+        <small>Rastreabilidade Peça/Motor</small>
+      </div>
+    </div>
+
+    <div class="r-red">III. COMENTÁRIOS</div>
+    <div class="r-com">${esc(e.comentarios ?? '')}</div>
+  </div>
+
+  ${autoPrint ? '<script>window.addEventListener("load", () => setTimeout(() => window.print(), 500));</script>' : ''}
+</body></html>`;
   }
 
   /* ── Helpers ───────────────────────────────────────────────── */
