@@ -46,6 +46,9 @@ const OPTS_DEFAULT = {
   origens:      ['CESTARI', 'CONTIMATIC', 'TS TECH', 'DENSO', 'AISIN', 'Outro'],
   responsaveis: [],
   onde:         ['Sala da Inspeção', 'Linha de Montagem', 'Recebimento', 'Estoque'],
+  plantas:      null, // null = usar PLANTAS default
+  projetos:     null, // null = usar PROJETOS default
+  gatilhos:     null, // null = usar GATILHOS default (rótulos)
 };
 
 export class TroubleshootingPage {
@@ -55,7 +58,7 @@ export class TroubleshootingPage {
     this._page  = null;
     this._list  = [];
     this._timer = null;
-    this._filters = { planta: '', responsavel: '', gatilho: '', status: '', q: '' };
+    this._filters = { planta: '', projeto: '', responsavel: '', gatilho: '', status: '', q: '' };
     this._init();
   }
 
@@ -73,10 +76,11 @@ export class TroubleshootingPage {
     page.querySelector('#ts-refresh').addEventListener('click', () => this._reload());
     page.querySelector('#ts-edit-opts').addEventListener('click', () => this._openOptsEditor());
 
-    ['#ts-f-planta', '#ts-f-resp', '#ts-f-gatilho', '#ts-f-status', '#ts-f-q'].forEach(sel => {
+    ['#ts-f-planta', '#ts-f-proj', '#ts-f-resp', '#ts-f-gatilho', '#ts-f-status', '#ts-f-q'].forEach(sel => {
       const el = page.querySelector(sel);
       el.addEventListener('input', () => {
         const key = sel === '#ts-f-planta' ? 'planta'
+                  : sel === '#ts-f-proj'   ? 'projeto'
                   : sel === '#ts-f-resp'   ? 'responsavel'
                   : sel === '#ts-f-gatilho' ? 'gatilho'
                   : sel === '#ts-f-status' ? 'status' : 'q';
@@ -109,7 +113,11 @@ export class TroubleshootingPage {
           <input id="ts-f-q" class="ts-inp" placeholder="🔍 Buscar por Part No, peça, problema, responsável..." />
           <select id="ts-f-planta" class="ts-sel">
             <option value="">Planta: todas</option>
-            ${PLANTAS.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('')}
+            ${this._plantasList().map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('')}
+          </select>
+          <select id="ts-f-proj" class="ts-sel">
+            <option value="">Projeto: todos</option>
+            ${this._projetosList().map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('')}
           </select>
           <select id="ts-f-resp" class="ts-sel">
             <option value="">Responsável: todos</option>
@@ -117,7 +125,7 @@ export class TroubleshootingPage {
           </select>
           <select id="ts-f-gatilho" class="ts-sel">
             <option value="">O que gerou: todos</option>
-            ${GATILHOS.map(g => `<option value="${g.v}">${g.l}</option>`).join('')}
+            ${this._gatilhosList().map(g => `<option value="${g.v}">${g.l}</option>`).join('')}
           </select>
           <select id="ts-f-status" class="ts-sel">
             <option value="">Status: todos</option>
@@ -196,7 +204,13 @@ export class TroubleshootingPage {
       .ts-card__date { font-family:monospace; font-size:11px; color:var(--text-mute); }
       .ts-card__body h4 { font-size:13px; font-weight:700; margin:0 0 3px; color:var(--text); }
       .ts-card__body p { font-size:11px; color:var(--text-mute); margin:1px 0; }
-      .ts-card__meta { text-align:right; display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
+
+      /* Pills e ações do lado direito distribuídos em colunas */
+      .ts-card__meta {
+        display:grid; grid-template-columns:auto auto auto;
+        gap:4px 8px; align-items:start; justify-items:end;
+      }
+      .ts-card__pills-col { display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
       .ts-pill { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px;
         border-radius:10px; text-transform:uppercase; letter-spacing:.4px; }
       .ts-card__actions { display:flex; gap:4px; margin-top:6px; }
@@ -373,7 +387,9 @@ export class TroubleshootingPage {
 
       /* Opts editor */
       .opts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:16px 18px; }
-      @media (max-width:640px) { .opts-grid { grid-template-columns:1fr; } }
+      .opts-grid--3 { grid-template-columns:1fr 1fr 1fr; }
+      @media (max-width:820px) { .opts-grid, .opts-grid--3 { grid-template-columns:1fr 1fr; } }
+      @media (max-width:520px) { .opts-grid, .opts-grid--3 { grid-template-columns:1fr; } }
       .opts-item label { display:block; font-size:11px; font-weight:700; text-transform:uppercase;
         letter-spacing:.4px; color:var(--text-mute); margin-bottom:4px; }
       .opts-item textarea {
@@ -436,10 +452,33 @@ export class TroubleshootingPage {
   }
   _saveOpts(o) { try { localStorage.setItem(OPTS_KEY, JSON.stringify(o)); } catch {} }
 
+  // Getters dinâmicos: usam customizações do OPTS_KEY, fallback pros defaults
+  _plantasList() {
+    const o = this._loadOpts();
+    return Array.isArray(o.plantas) && o.plantas.length ? o.plantas : PLANTAS;
+  }
+  _projetosList() {
+    const o = this._loadOpts();
+    return Array.isArray(o.projetos) && o.projetos.length ? o.projetos : PROJETOS;
+  }
+  _gatilhosList() {
+    const o = this._loadOpts();
+    if (Array.isArray(o.gatilhos) && o.gatilhos.length) {
+      return o.gatilhos.map(l => ({ v: this._slug(l), l }));
+    }
+    return GATILHOS;
+  }
+  _gatilhoLabel(v) {
+    const g = this._gatilhosList().find(x => x.v === v);
+    return g ? g.l : v;
+  }
+  _slug(s) { return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').replace(/^_+|_+$/g, ''); }
+
   _filtered() {
-    const { planta, responsavel, gatilho, status, q } = this._filters;
+    const { planta, projeto, responsavel, gatilho, status, q } = this._filters;
     return this._list.filter(e => {
       if (planta && String(e.planta ?? '').toLowerCase() !== planta) return false;
+      if (projeto && String(e.projeto ?? '').toLowerCase() !== projeto) return false;
       if (responsavel && String(e.responsavelArea ?? '').toLowerCase() !== responsavel) return false;
       if (gatilho && !((e.gatilhos ?? []).includes(gatilho))) return false;
       if (status && (e.status ?? '') !== status) return false;
@@ -484,10 +523,7 @@ export class TroubleshootingPage {
       card.dataset.planta = e.planta || '';
       const stt = STATUS.find(s => s.v === e.status);
       const dataStr = e.quando ? e.quando.split('-').reverse().join('/') : this._fmtDate(e.ts);
-      const gats = (e.gatilhos ?? []).map(g => {
-        const found = GATILHOS.find(x => x.v === g);
-        return found ? found.l : g;
-      }).slice(0, 2);
+      const gats = (e.gatilhos ?? []).map(g => this._gatilhoLabel(g)).slice(0, 2);
       card.innerHTML = `
         <div>
           <div class="ts-card__id">Nº ${this._esc(e.numInforme) || '—'}</div>
@@ -500,15 +536,21 @@ export class TroubleshootingPage {
           <p>${this._esc((e.como || '').slice(0, 140))}${(e.como || '').length > 140 ? '…' : ''}</p>
         </div>
         <div class="ts-card__meta">
-          ${e.projeto ? `<span class="ts-pill ts-pill--proj">${this._esc(e.projeto)}</span>` : ''}
-          ${e.planta ? `<span class="ts-pill ts-pill--planta">${this._esc(e.planta)}</span>` : ''}
-          ${e.responsavelArea ? `<span class="ts-pill ts-pill--resp">${this._esc(e.responsavelArea)}</span>` : ''}
-          ${gats.map(g => `<span class="ts-pill ts-pill--gat">${this._esc(g)}</span>`).join('')}
-          ${stt ? `<span class="ts-pill ts-pill--status" style="color:${stt.cor}">${stt.l}</span>` : ''}
-          <div class="ts-card__actions">
-            <button class="ts-card-btn" data-act="view" title="Visualizar (modo relatório)">👁</button>
-            <button class="ts-card-btn" data-act="edit" title="Editar">✏</button>
-            <button class="ts-card-btn" data-act="pdf"  title="Imprimir / Salvar PDF">🖨</button>
+          <div class="ts-card__pills-col">
+            ${e.projeto ? `<span class="ts-pill ts-pill--proj">${this._esc(e.projeto)}</span>` : ''}
+            ${e.planta ? `<span class="ts-pill ts-pill--planta">${this._esc(e.planta)}</span>` : ''}
+          </div>
+          <div class="ts-card__pills-col">
+            ${e.responsavelArea ? `<span class="ts-pill ts-pill--resp">${this._esc(e.responsavelArea)}</span>` : ''}
+            ${gats.map(g => `<span class="ts-pill ts-pill--gat">${this._esc(g)}</span>`).join('')}
+          </div>
+          <div class="ts-card__pills-col">
+            ${stt ? `<span class="ts-pill ts-pill--status" style="color:${stt.cor}">${stt.l}</span>` : ''}
+            <div class="ts-card__actions">
+              <button class="ts-card-btn" data-act="view" title="Visualizar (modo relatório)">👁</button>
+              <button class="ts-card-btn" data-act="edit" title="Editar">✏</button>
+              <button class="ts-card-btn" data-act="pdf"  title="Imprimir / Salvar PDF">🖨</button>
+            </div>
           </div>
         </div>
       `;
@@ -642,14 +684,14 @@ export class TroubleshootingPage {
             <span class="informe-lbl">Planta: *</span>
             <select data-field="planta" data-required="1">
               <option value="">—</option>
-              ${PLANTAS.map(p => `<option value="${p}"${e.planta===p?' selected':''}>${p}</option>`).join('')}
+              ${this._plantasList().map(p => `<option value="${p}"${e.planta===p?' selected':''}>${p}</option>`).join('')}
             </select>
           </label>
           <label class="informe-inline">
             <span class="informe-lbl">Projeto: *</span>
             <select data-field="projeto" data-required="1">
               <option value="">—</option>
-              ${PROJETOS.map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
+              ${this._projetosList().map(p => `<option value="${p}"${e.projeto===p?' selected':''}>${p}</option>`).join('')}
             </select>
           </label>
           <label class="informe-inline">
@@ -670,7 +712,7 @@ export class TroubleshootingPage {
 
       <div class="tpl-sec-hdr">II. O QUE GEROU?</div>
       <div class="tpl-gatilhos">
-        ${GATILHOS.map(g => `
+        ${this._gatilhosList().map(g => `
           <label>
             <input type="checkbox" data-gatilho="${g.v}"${e.gatilhos.includes(g.v) ? ' checked' : ''}> ${g.l}
           </label>
@@ -1015,30 +1057,37 @@ export class TroubleshootingPage {
      EDITOR DE OPÇÕES (autocompletes)
   ══════════════════════════════════════════════════════════ */
   _openOptsEditor() {
-    const opts = this._loadOpts();
+    const opts    = this._loadOpts();
+    const plantas = this._plantasList();
+    const projs   = this._projetosList();
+    const gats    = this._gatilhosList().map(g => g.l);
+
     const ov = document.createElement('div');
     ov.className = 'ts-modal-ov';
-    const mk = (key, lbl) => `
+    const mk = (key, lbl, hint, curArr) => `
       <div class="opts-item">
         <label>${lbl}</label>
-        <textarea id="opts-${key}" spellcheck="false">${this._esc((opts[key] ?? []).join('\n'))}</textarea>
-        <small>Uma opção por linha. Aparecem como sugestão nos campos.</small>
+        <textarea id="opts-${key}" spellcheck="false">${this._esc((curArr ?? []).join('\n'))}</textarea>
+        <small>${hint}</small>
       </div>`;
     ov.innerHTML = `
-      <div class="ts-modal" style="width:min(720px,100%);">
+      <div class="ts-modal" style="width:min(820px,100%);">
         <div class="ts-modal__hdr">
           <h3>✏ Editar listas de opções</h3>
           <button class="ts-modal__close" id="opts-close">×</button>
         </div>
         <div class="ts-modal__body">
-          <div class="opts-grid">
-            ${mk('origens',      'Origens / fornecedores')}
-            ${mk('responsaveis', 'Responsáveis frequentes')}
-            ${mk('onde',         'Locais (Onde)')}
+          <div class="opts-grid opts-grid--3">
+            ${mk('plantas',      'Plantas',                 'Uma sigla por linha. Aparece na barra I. INFORME.', plantas)}
+            ${mk('projetos',     'Projetos',                'Um nome por linha. Aparece ao lado da Planta.',     projs)}
+            ${mk('gatilhos',     'O que gerou? (rótulos)',  'Um rótulo por linha. Aparece nos checkboxes.',      gats)}
+            ${mk('origens',      'Origens / fornecedores',  'Um por linha. Autocomplete em Origem.',              opts.origens)}
+            ${mk('responsaveis', 'Responsáveis frequentes', 'Um por linha. Autocomplete em Resp.:',              opts.responsaveis)}
+            ${mk('onde',         'Locais (Onde)',           'Um por linha. Autocomplete em Onde:',                opts.onde)}
           </div>
         </div>
         <div class="ts-modal__ft">
-          <div></div>
+          <div><button class="ts-btn" id="opts-reset" title="Volta às opções padrão">↺ Restaurar padrão</button></div>
           <div class="right">
             <button class="ts-btn" id="opts-cancel">Cancelar</button>
             <button class="ts-btn ts-btn--primary" id="opts-save">Salvar</button>
@@ -1050,15 +1099,57 @@ export class TroubleshootingPage {
     const close = () => ov.remove();
     ov.querySelector('#opts-close').addEventListener('click', close);
     ov.querySelector('#opts-cancel').addEventListener('click', close);
+    ov.querySelector('#opts-reset').addEventListener('click', () => {
+      if (!confirm('Restaurar todas as listas para os valores padrão?')) return;
+      this._saveOpts({ ...OPTS_DEFAULT });
+      close();
+      // Rebuild o topbar/filtros para refletir listas padrão
+      this._rebuildShell();
+    });
     ov.querySelector('#opts-save').addEventListener('click', () => {
       const upd = { ...opts };
-      ['origens', 'responsaveis', 'onde'].forEach(k => {
+      ['plantas', 'projetos', 'gatilhos', 'origens', 'responsaveis', 'onde'].forEach(k => {
         const raw = ov.querySelector('#opts-' + k).value;
-        upd[k] = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        const arr = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        upd[k] = arr.length ? arr : null; // null = usa default
       });
       this._saveOpts(upd);
       close();
+      this._rebuildShell();
     });
+  }
+
+  _rebuildShell() {
+    // Re-renderiza o corpo da página para refletir as novas opções de filtro
+    if (!this._page) return;
+    const wrap = this._page.querySelector('.ts-wrap');
+    const topbar = this._page.querySelector('.ts-topbar');
+    if (topbar) {
+      // Só refaz os filtros (não os KPIs) para preservar handlers do topbar
+      const html = this._templateShell();
+      const tmp  = document.createElement('div');
+      tmp.innerHTML = html;
+      const newFilters = tmp.querySelector('.ts-filters');
+      const oldFilters = this._page.querySelector('.ts-filters');
+      if (newFilters && oldFilters) {
+        oldFilters.replaceWith(newFilters);
+        // Rebind
+        ['#ts-f-planta', '#ts-f-proj', '#ts-f-resp', '#ts-f-gatilho', '#ts-f-status', '#ts-f-q'].forEach(sel => {
+          const el = this._page.querySelector(sel);
+          if (!el) return;
+          el.addEventListener('input', () => {
+            const key = sel === '#ts-f-planta' ? 'planta'
+                      : sel === '#ts-f-proj'   ? 'projeto'
+                      : sel === '#ts-f-resp'   ? 'responsavel'
+                      : sel === '#ts-f-gatilho' ? 'gatilho'
+                      : sel === '#ts-f-status' ? 'status' : 'q';
+            this._filters[key] = el.value.trim().toLowerCase();
+            this._renderList();
+          });
+        });
+      }
+    }
+    this._renderList();
   }
 
   /* ══════════════════════════════════════════════════════════
