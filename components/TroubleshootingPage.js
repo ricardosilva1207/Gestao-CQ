@@ -578,8 +578,7 @@ export class TroubleshootingPage {
           ${isEdit ? '<button class="ts-btn ts-btn--danger" id="ts-del">🗑 Remover</button>' : '<div></div>'}
           <div class="right">
             <button class="ts-btn" id="ts-cancel">Cancelar</button>
-            <button class="ts-btn" id="ts-save-pdf" title="Salvar e abrir para imprimir/PDF">💾 Salvar + PDF</button>
-            <button class="ts-btn ts-btn--primary" id="ts-save">${isEdit ? 'Atualizar' : 'Salvar'}</button>
+            <button class="ts-btn ts-btn--primary" id="ts-save" title="Salva no sistema e abre para imprimir/PDF">${isEdit ? 'Atualizar e gerar PDF' : 'Salvar e gerar PDF'}</button>
           </div>
         </div>
       </div>
@@ -615,8 +614,8 @@ export class TroubleshootingPage {
       await this._reload();
       if (openReportAfter) this._openReport(e, true);
     };
-    ov.querySelector('#ts-save').addEventListener('click',     () => doSave(false));
-    ov.querySelector('#ts-save-pdf').addEventListener('click', () => doSave(true));
+    // Salvar sempre finaliza gerando o PDF (imprimir / salvar em disco)
+    ov.querySelector('#ts-save').addEventListener('click', () => doSave(true));
 
     if (isEdit) {
       ov.querySelector('#ts-del').addEventListener('click', async () => {
